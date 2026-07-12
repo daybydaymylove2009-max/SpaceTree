@@ -140,7 +140,7 @@ onUnmounted(() => {
           <el-button
             size="large"
             round
-            @click="openExternalLink('https://github.com/daybydaymylove2009-max/file-manager')"
+            @click="openExternalLink('https://github.com/daybydaymylove2009-max/SpaceTree')"
             class="github-btn"
           >
             <template #icon><span>🐙</span></template>
@@ -267,7 +267,7 @@ onUnmounted(() => {
           <el-button
             text
             type="primary"
-            @click="openExternalLink('https://github.com/daybydaymylove2009-max/file-manager')"
+            @click="openExternalLink('https://github.com/daybydaymylove2009-max/SpaceTree')"
           >
             <template #icon><span>🐙</span></template>
             {{ t('about.website') }}
@@ -275,7 +275,7 @@ onUnmounted(() => {
           <el-button
             text
             type="primary"
-            @click="openExternalLink('https://github.com/daybydaymylove2009-max/file-manager/issues')"
+            @click="openExternalLink('https://github.com/daybydaymylove2009-max/SpaceTree/issues')"
           >
             <template #icon><span>💬</span></template>
             {{ t('about.issue') }}

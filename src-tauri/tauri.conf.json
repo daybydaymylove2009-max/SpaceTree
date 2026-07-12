@@ -28,7 +28,7 @@
       "active": true,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXkAdGVzdAo=",
       "endpoints": [
-        "https://raw.githubusercontent.com/daybydaymylove2009-max/file-manager/main/updater.json"
+        "https://raw.githubusercontent.com/daybydaymylove2009-max/SpaceTree/main/updater.json"
       ]
     }
   },
