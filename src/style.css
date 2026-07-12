@@ -1,0 +1,235 @@
+:root {
+  --text: #6b6375;
+  --text-h: #08060d;
+  --bg: #fff;
+  --border: #e5e4e7;
+  --code-bg: #f4f3ec;
+  --accent: #aa3bff;
+  --accent-bg: rgba(170, 59, 255, 0.1);
+  --accent-border: rgba(170, 59, 255, 0.5);
+  --social-bg: rgba(244, 243, 236, 0.5);
+  --shadow:
+    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+
+  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --mono: ui-monospace, Consolas, monospace;
+
+  font: 18px/145% var(--sans);
+  letter-spacing: 0.18px;
+  color-scheme: light dark;
+  color: var(--text);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  @media (max-width: 1024px) {
+    font-size: 16px;
+  }
+}
+
+.dark, [data-theme="dark"] {
+  --text: #9ca3af;
+  --text-h: #f3f4f6;
+  --bg: #16171d;
+  --border: #2e303a;
+  --code-bg: #1f2028;
+  --accent: #c084fc;
+  --accent-bg: rgba(192, 132, 252, 0.15);
+  --accent-border: rgba(192, 132, 252, 0.5);
+  --social-bg: rgba(47, 48, 58, 0.5);
+  --shadow:
+    rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+}
+
+.dark #social .button-icon,
+[data-theme="dark"] #social .button-icon {
+  filter: invert(1) brightness(2);
+}
+
+body {
+  margin: 0;
+}
+
+h1,
+h2 {
+  font-family: var(--heading);
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+h1 {
+  font-size: 56px;
+  letter-spacing: -1.68px;
+  margin: 32px 0;
+  @media (max-width: 1024px) {
+    font-size: 36px;
+    margin: 20px 0;
+  }
+}
+h2 {
+  font-size: 24px;
+  line-height: 118%;
+  letter-spacing: -0.24px;
+  margin: 0 0 8px;
+  @media (max-width: 1024px) {
+    font-size: 20px;
+  }
+}
+p {
+  margin: 0;
+}
+
+code,
+.counter {
+  font-family: var(--mono);
+  display: inline-flex;
+  border-radius: 4px;
+  color: var(--text-h);
+}
+
+code {
+  font-size: 15px;
+  line-height: 135%;
+  padding: 4px 8px;
+  background: var(--code-bg);
+}
+
+/* ==================== 统一局部卡片拉伸与填充 ==================== */
+.el-card {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* 统一核心子页面容器边距与高宽约束 */
+.scan-center,
+.tools-center,
+.settings-center,
+.analysis-center,
+.search-center-glass,
+.duplicates-page-container,
+.directory-tree-container,
+.image-archive-container,
+.update-center,
+.page-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 100% !important;
+  box-sizing: border-box !important;
+  padding: 24px !important; /* 科学级对齐内边距 */
+  overflow-y: auto !important;
+}
+
+/* ==================== 统一玻璃拟态设计系统 ==================== */
+
+/* 页面头部公共排版 */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px !important;
+  flex-shrink: 0;
+}
+
+.header-title h2 {
+  margin: 0 0 6px 0 !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  color: var(--text-primary) !important;
+}
+
+.header-subtitle {
+  color: var(--text-tertiary) !important;
+  font-size: 14px !important;
+  margin: 0 !important;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* 统一磨砂玻璃卡片 */
+.glass-card {
+  background: rgba(255, 255, 255, 0.65) !important;
+  backdrop-filter: blur(14px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(160%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.04) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* 暗色卡片微调 */
+.dark .glass-card,
+[data-theme="dark"] .glass-card {
+  background: rgba(36, 36, 36, 0.65) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25) !important;
+}
+
+/* 玻璃按钮 */
+.glass-btn-full,
+.glass-btn {
+  background: rgba(255, 255, 255, 0.7) !important;
+  border: 1px solid rgba(220, 223, 230, 0.6) !important;
+  border-radius: 8px !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.dark .glass-btn-full,
+.dark .glass-btn,
+[data-theme="dark"] .glass-btn-full,
+[data-theme="dark"] .glass-btn {
+  background: rgba(45, 45, 45, 0.7) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: var(--text-primary) !important;
+}
+
+/* ==================== 低配置设备渐进式降级系统 ==================== */
+
+.perf-low .glass-card,
+.perf-low .search-preview-sidebar,
+.perf-low .custom-search-input .el-input__wrapper,
+.perf-low .glass-select .el-select__wrapper,
+.perf-low .glass-select-small .el-select__wrapper,
+.perf-low .glass-number .el-input__wrapper,
+.perf-low .glass-date .el-input__wrapper,
+.perf-low .glass-btn,
+.perf-low .glass-btn-full,
+.perf-low .glass-btn-icon {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* 亮色低配背景 */
+.perf-low .glass-card {
+  background: rgba(248, 249, 250, 0.96) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+.perf-low .search-preview-sidebar {
+  background: rgba(245, 247, 250, 0.98) !important;
+  border-left: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+/* 暗色低配背景 */
+.perf-low.dark .glass-card,
+.perf-low[data-theme="dark"] .glass-card {
+  background: rgba(28, 28, 30, 0.98) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.perf-low.dark .search-preview-sidebar,
+.perf-low[data-theme="dark"] .search-preview-sidebar {
+  background: rgba(24, 24, 26, 0.98) !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.perf-low.dark .metadata-list .meta-value,
+.perf-low[data-theme="dark"] .metadata-list .meta-value {
+  background: rgba(255, 255, 255, 0.03) !important;
+}

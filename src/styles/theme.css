@@ -1,0 +1,175 @@
+/**
+ * 主题样式变量
+ * @description 定义亮色和暗色主题的 CSS 变量
+ */
+
+/* 基础变量 */
+:root {
+  /* 主色调 */
+  --primary-color: #409EFF;
+  --primary-light: #66b1ff;
+  --primary-dark: #337ecc;
+  
+  /* 背景色 */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f7fa;
+  --bg-tertiary: #e4e7ed;
+  
+  /* 文字色 */
+  --text-primary: #303133;
+  --text-secondary: #606266;
+  --text-tertiary: #909399;
+  --text-placeholder: #c0c4cc;
+  
+  /* 边框色 */
+  --border-color: #dcdfe6;
+  --border-light: #e4e7ed;
+  --border-lighter: #ebeef5;
+  
+  /* 阴影 */
+  --shadow-base: 0 2px 4px rgba(0, 0, 0, 0.12);
+  --shadow-light: 0 2px 12px rgba(0, 0, 0, 0.1);
+  --shadow-dark: 0 2px 12px rgba(0, 0, 0, 0.2);
+  
+  /* 功能色 */
+  --success-color: #67C23A;
+  --warning-color: #E6A23C;
+  --danger-color: #F56C6C;
+  --info-color: #909399;
+  
+  /* 侧边栏 */
+  --sidebar-bg: #ffffff;
+  --sidebar-text: #606266;
+  --sidebar-active-bg: linear-gradient(135deg, #409EFF 0%, #66b1ff 100%);
+  --sidebar-active-text: #ffffff;
+}
+
+/* 暗色主题 */
+.dark, [data-theme="dark"] {
+  /* 背景色 */
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #242424;
+  --bg-tertiary: #2d2d2d;
+  
+  /* 文字色 */
+  --text-primary: #e0e0e0;
+  --text-secondary: #b0b0b0;
+  --text-tertiary: #808080;
+  --text-placeholder: #606060;
+  
+  /* 边框色 */
+  --border-color: #404040;
+  --border-light: #363636;
+  --border-lighter: #2a2a2a;
+  
+  /* 阴影 */
+  --shadow-base: 0 2px 4px rgba(0, 0, 0, 0.3);
+  --shadow-light: 0 2px 12px rgba(0, 0, 0, 0.4);
+  --shadow-dark: 0 2px 12px rgba(0, 0, 0, 0.5);
+  
+  /* 侧边栏 */
+  --sidebar-bg: #242424;
+  --sidebar-text: #b0b0b0;
+}
+
+/* 暗色主题元素覆盖 */
+.dark .el-card,
+[data-theme="dark"] .el-card {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .el-table,
+[data-theme="dark"] .el-table {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.dark .el-table th,
+.dark .el-table td,
+[data-theme="dark"] .el-table th,
+[data-theme="dark"] .el-table td {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+.dark .el-table--striped .el-table__body tr.el-table__row--striped td,
+[data-theme="dark"] .el-table--striped .el-table__body tr.el-table__row--striped td {
+  background-color: var(--bg-tertiary);
+}
+
+.dark .el-input__inner,
+[data-theme="dark"] .el-input__inner {
+  background-color: var(--bg-tertiary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .el-button--default,
+[data-theme="dark"] .el-button--default {
+  background-color: var(--bg-tertiary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dark .el-collapse,
+[data-theme="dark"] .el-collapse {
+  border-color: var(--border-color);
+}
+
+.dark .el-collapse-item__header,
+[data-theme="dark"] .el-collapse-item__header {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+.dark .el-collapse-item__content,
+[data-theme="dark"] .el-collapse-item__content {
+  background-color: var(--bg-secondary);
+  color: var(--text-secondary);
+}
+
+.dark .el-empty__description,
+[data-theme="dark"] .el-empty__description {
+  color: var(--text-tertiary);
+}
+
+.dark .app-layout,
+[data-theme="dark"] .app-layout {
+  background: var(--bg-primary);
+}
+
+.dark .sidebar,
+[data-theme="dark"] .sidebar {
+  background: var(--sidebar-bg);
+  border-color: var(--border-color);
+}
+
+.dark .nav-item,
+[data-theme="dark"] .nav-item {
+  color: var(--sidebar-text);
+}
+
+.dark .nav-item:hover,
+[data-theme="dark"] .nav-item:hover {
+  background: var(--bg-tertiary);
+}
+
+.dark .main-content,
+[data-theme="dark"] .main-content {
+  background: var(--bg-primary);
+}
+
+.dark h2,
+.dark .page-header h2,
+[data-theme="dark"] h2,
+[data-theme="dark"] .page-header h2 {
+  color: var(--text-primary);
+}
+
+.dark .header-subtitle,
+[data-theme="dark"] .header-subtitle {
+  color: var(--text-tertiary);
+}
