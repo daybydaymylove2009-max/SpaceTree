@@ -5,6 +5,7 @@
  * @description 集成了高性能 GPU 加速 HTML5 Canvas 矩形树图（Squarified Treemap）、大文件无级缩放/拖拽聚焦、历史扫描快照导出下载与差分对比。
  */
 import { ref, onMounted, onUnmounted } from 'vue';
+import { t } from '../utils/i18n';
 import { ElMessage } from 'element-plus';
 import {
   Files, Warning, Check, Refresh, Download,
@@ -20,6 +21,11 @@ import type { MultiDimensionalReport, LargeFileInfo, FileTypeDetail, SizeRangeDe
 const props = defineProps<{
   db_path: string;
 }>();
+
+const forceUpdateKey = ref(0);
+const onLanguageChange = () => {
+  forceUpdateKey.value++;
+};
 
 // 使用文件操作组合式函数
 const { openFolder } = useFileOperations({
@@ -715,6 +721,7 @@ onMounted(() => {
   }
 
   window.addEventListener('resize', handleResize);
+  window.addEventListener('app-lang-change', onLanguageChange);
 
   // 监听 HTML class 变化（暗黑/明亮主题切换）并触发重绘
   themeObserver = new MutationObserver(() => {
@@ -728,6 +735,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
+  window.removeEventListener('app-lang-change', onLanguageChange);
   cleanupCharts();
   if (themeObserver) {
     themeObserver.disconnect();
@@ -736,23 +744,23 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="analysis-center">
+  <div class="analysis-center" :key="forceUpdateKey">
     <!-- 页头 -->
     <div class="page-header">
       <div class="header-title">
-        <h2>分析中心</h2>
-        <p class="header-subtitle">多维空间统计可视化、Canvas 无级缩放树图与快照对比工作台</p>
+        <h2>{{ t('analysis.title') }}</h2>
+        <p class="header-subtitle">{{ t('analysis.subtitle') }}</p>
       </div>
       <div class="header-actions">
         <el-button-group>
           <el-button type="primary" plain @click="exportSnapshot">
-            <el-icon><Download /></el-icon> 📸 导出当前快照
+            <el-icon><Download /></el-icon> 📸 {{ t('analysis.exportSnapshot') }}
           </el-button>
           <el-button type="success" plain @click="showCompareDrawer = true">
-            <el-icon><Share /></el-icon> ⚖️ 快照差分比对
+            <el-icon><Share /></el-icon> ⚖️ {{ t('analysis.diffSnapshot') }}
           </el-button>
           <el-button type="info" @click="generateReport" :loading="isGenerating">
-            <el-icon><Refresh /></el-icon> 重新分析
+            <el-icon><Refresh /></el-icon> {{ t('common.refresh') }}
           </el-button>
         </el-button-group>
       </div>

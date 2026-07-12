@@ -1,6 +1,19 @@
 <script setup lang="ts">
-import { ref, onUnmounted, h } from 'vue';
+import { ref, onMounted, onUnmounted, h } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { t, getLanguage } from '../utils/i18n';
+
+// 国际化强制渲染key
+const forceUpdateKey = ref(0);
+const onLanguageChange = () => {
+  forceUpdateKey.value++;
+};
+onMounted(() => {
+  window.addEventListener('app-lang-change', onLanguageChange);
+});
+onUnmounted(() => {
+  window.removeEventListener('app-lang-change', onLanguageChange);
+});
 import { 
   Folder, Plus, Delete, Refresh, Loading, VideoPause, VideoPlay, 
   Setting, Clock, Check, Warning, Document, FolderOpened, Close,
@@ -818,21 +831,21 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="scan-center">
+  <div class="scan-center" :key="forceUpdateKey">
     <!-- 页面标题 -->
     <div class="page-header">
       <div class="header-title">
-        <h2>扫描中心</h2>
-        <p class="header-subtitle">智能扫描和管理您的文件</p>
+        <h2>{{ t('menu.scan') }}</h2>
+        <p class="header-subtitle">{{ t('scan.subtitle') }}</p>
       </div>
       <div class="header-actions">
         <el-button text @click="openConfigPanel">
           <el-icon><Setting /></el-icon>
-          扫描配置
+          {{ t('zh-CN' === getLanguage() ? '扫描配置' : 'Config') }}
         </el-button>
         <el-button text @click="openHistoryPanel">
           <el-icon><Clock /></el-icon>
-          历史记录
+          {{ t('zh-CN' === getLanguage() ? '历史记录' : 'History') }}
         </el-button>
       </div>
     </div>
@@ -849,10 +862,10 @@ onUnmounted(() => {
             <el-icon :size="24"><Refresh /></el-icon>
           </div>
           <div class="mode-info">
-            <h4>增量扫描</h4>
-            <p>仅扫描新增和修改的文件，速度更快</p>
+            <h4>{{ t('zh-CN' === getLanguage() ? '增量扫描' : 'Incremental') }}</h4>
+            <p>{{ t('zh-CN' === getLanguage() ? '仅扫描新增和修改的文件，速度更快' : 'Fast scanning for modified or new files') }}</p>
           </div>
-          <el-tag v-if="scanMode === 'incremental'" type="success" effect="dark">推荐</el-tag>
+          <el-tag v-if="scanMode === 'incremental'" type="success" effect="dark">{{ t('zh-CN' === getLanguage() ? '推荐' : 'Recommended') }}</el-tag>
         </div>
         <div 
           class="mode-option" 

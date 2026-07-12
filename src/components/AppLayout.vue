@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { 
   Folder, Search, Document, DataAnalysis, Tools, Setting, 
   Fold, Expand, CircleCheck, InfoFilled, Files, Picture, Download
 } from '@element-plus/icons-vue';
+import { t, getLanguage } from '../utils/i18n';
 
 interface NavItem {
   key: string;
-  label: string;
   icon: any;
   badge?: number;
 }
@@ -22,20 +22,42 @@ const emit = defineEmits<{
 
 const isCollapsed = ref(false);
 const isMobile = ref(window.innerWidth < 768);
+const forceUpdateKey = ref(0);
+
+const onLanguageChange = () => {
+  forceUpdateKey.value++;
+};
 
 // 导航菜单配置
 const navItems: NavItem[] = [
-  { key: 'scan', label: '扫描中心', icon: Folder },
-  { key: 'search', label: '文件搜索', icon: Search },
-  { key: 'directory', label: '目录浏览', icon: Files },
-  { key: 'duplicates', label: '重复文件', icon: Document },
-  { key: 'image_archive', label: '图片打包', icon: Picture },
-  { key: 'analysis', label: '分析中心', icon: DataAnalysis },
-  { key: 'tools', label: '系统工具', icon: Tools },
-  { key: 'settings', label: '全局设置', icon: Setting },
-  { key: 'update', label: '检查更新', icon: Download },
-  { key: 'about', label: '关于软件', icon: InfoFilled },
+  { key: 'scan', icon: Folder },
+  { key: 'search', icon: Search },
+  { key: 'directory', icon: Files },
+  { key: 'duplicates', icon: Document },
+  { key: 'image_archive', icon: Picture },
+  { key: 'analysis', icon: DataAnalysis },
+  { key: 'tools', icon: Tools },
+  { key: 'settings', icon: Setting },
+  { key: 'update', icon: Download },
+  { key: 'about', icon: InfoFilled },
 ];
+
+// 动态解析国际化菜单标签
+function getMenuLabel(key: string): string {
+  switch (key) {
+    case 'scan': return t('menu.scan');
+    case 'search': return t('search.title');
+    case 'directory': return t('zh-CN' === getLanguage() ? '目录浏览' : 'Directory View');
+    case 'duplicates': return t('zh-CN' === getLanguage() ? '重复文件' : 'Duplicates List');
+    case 'image_archive': return t('zh-CN' === getLanguage() ? '图片打包' : 'Image Packager');
+    case 'analysis': return t('analysis.title');
+    case 'tools': return t('menu.tools');
+    case 'settings': return t('menu.settings');
+    case 'update': return t('zh-CN' === getLanguage() ? '检查更新' : 'Check Updates');
+    case 'about': return t('menu.about');
+    default: return '';
+  }
+}
 
 // 处理菜单点击
 function handleMenuClick(key: string) {
@@ -50,24 +72,31 @@ function toggleSidebar() {
   isCollapsed.value = !isCollapsed.value;
 }
 
-// 监听窗口大小变化
-window.addEventListener('resize', () => {
+const handleResize = () => {
   isMobile.value = window.innerWidth < 768;
   if (isMobile.value) {
     isCollapsed.value = true;
   } else {
     isCollapsed.value = false;
   }
+};
+
+onMounted(() => {
+  window.addEventListener('resize', handleResize);
+  window.addEventListener('app-lang-change', onLanguageChange);
+  if (isMobile.value) {
+    isCollapsed.value = true;
+  }
 });
 
-// 初始化
-if (isMobile.value) {
-  isCollapsed.value = true;
-}
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize);
+  window.removeEventListener('app-lang-change', onLanguageChange);
+});
 </script>
 
 <template>
-  <div class="app-layout" :class="{ 'is-collapsed': isCollapsed, 'is-mobile': isMobile }">
+  <div class="app-layout" :class="{ 'is-collapsed': isCollapsed, 'is-mobile': isMobile }" :key="forceUpdateKey">
     <!-- 侧边栏 -->
     <aside class="sidebar">
       <!-- Logo区域 -->
@@ -77,8 +106,8 @@ if (isMobile.value) {
             <el-icon :size="28" color="#409EFF"><CircleCheck /></el-icon>
           </div>
           <div class="brand-text" v-show="!isCollapsed">
-            <h1 class="brand-title">重复文件猎手</h1>
-            <span class="brand-subtitle">v3.0.0</span>
+            <h1 class="brand-title">{{ t('common.appName') }}</h1>
+            <span class="brand-subtitle">v3.40.0</span>
           </div>
         </div>
         <el-button 
@@ -107,7 +136,7 @@ if (isMobile.value) {
           <el-icon :size="20" class="nav-icon">
             <component :is="item.icon" />
           </el-icon>
-          <span class="nav-label" v-show="!isCollapsed">{{ item.label }}</span>
+          <span class="nav-label" v-show="!isCollapsed">{{ getMenuLabel(item.key) }}</span>
           <el-badge 
             v-if="item.badge && !isCollapsed" 
             :value="item.badge" 
@@ -120,7 +149,7 @@ if (isMobile.value) {
       <div class="sidebar-footer" v-show="!isCollapsed">
         <div class="footer-info">
           <el-tag size="small" type="info" effect="plain">Pro</el-tag>
-          <span class="footer-text">已激活</span>
+          <span class="footer-text">{{ t('zh-CN' === getLanguage() ? '已激活' : 'Activated') }}</span>
         </div>
       </div>
     </aside>
@@ -145,7 +174,7 @@ if (isMobile.value) {
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-  background: radial-gradient(circle at 10% 20%, #f4f6fa 0%, #eef2f7 90%);
+  background: radial-gradient(circle at 10% 20%, var(--el-bg-color-page) 0%, var(--el-bg-color) 90%);
   position: relative;
 }
 
@@ -154,7 +183,7 @@ if (isMobile.value) {
   position: absolute;
   width: 400px;
   height: 400px;
-  background: radial-gradient(circle, rgba(64, 158, 255, 0.12) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(64, 158, 255, 0.08) 0%, transparent 70%);
   top: -100px;
   left: -100px;
   pointer-events: none;
@@ -166,7 +195,7 @@ if (isMobile.value) {
   position: absolute;
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, rgba(103, 194, 58, 0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(103, 194, 58, 0.05) 0%, transparent 70%);
   bottom: -150px;
   right: -150px;
   pointer-events: none;
@@ -177,10 +206,10 @@ if (isMobile.value) {
 .sidebar {
   width: 240px;
   height: 100%;
-  background: rgba(255, 255, 255, 0.55);
+  background: var(--el-bg-color-overlay);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-right: 1px solid rgba(255, 255, 255, 0.45);
+  border-right: 1px solid var(--el-border-color-light);
   display: flex;
   flex-direction: column;
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -195,7 +224,7 @@ if (isMobile.value) {
   position: fixed;
   left: 0;
   top: 0;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
 }
 
 .is-mobile.is-collapsed .sidebar {
@@ -208,7 +237,7 @@ if (isMobile.value) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #e4e7ed;
+  border-bottom: 1px solid var(--el-border-color-light);
 }
 
 .brand {
@@ -225,7 +254,7 @@ if (isMobile.value) {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  background: linear-gradient(135deg, var(--el-color-primary-light-9) 0%, var(--el-color-primary-light-7) 100%);
   border-radius: 10px;
 }
 
@@ -234,28 +263,29 @@ if (isMobile.value) {
   flex-direction: column;
   gap: 2px;
   white-space: nowrap;
+  text-align: left;
 }
 
 .brand-title {
   font-size: 16px;
   font-weight: 600;
-  color: #303133;
+  color: var(--el-text-color-primary);
   margin: 0;
 }
 
 .brand-subtitle {
   font-size: 12px;
-  color: #909399;
+  color: var(--el-text-color-placeholder);
 }
 
 .collapse-btn {
   flex-shrink: 0;
-  color: #909399;
+  color: var(--el-text-color-placeholder);
 }
 
 .collapse-btn:hover {
-  color: #409EFF;
-  background: #ecf5ff;
+  color: var(--el-color-primary);
+  background: var(--el-fill-color-light);
 }
 
 /* 导航菜单 */
@@ -274,19 +304,19 @@ if (isMobile.value) {
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: #606266;
+  color: var(--el-text-color-regular);
   position: relative;
 }
 
 .nav-item:hover {
-  background: rgba(64, 158, 255, 0.1);
-  color: #409EFF;
+  background: var(--el-fill-color-light);
+  color: var(--el-color-primary);
 }
 
 .nav-item.is-active {
-  background: linear-gradient(135deg, #409EFF 0%, #66b1ff 100%);
+  background: linear-gradient(135deg, var(--el-color-primary) 0%, var(--el-color-primary-light-3) 100%);
   color: #ffffff;
-  box-shadow: 0 4px 16px rgba(64, 158, 255, 0.25);
+  box-shadow: 0 4px 16px rgba(64, 158, 255, 0.2);
 }
 
 .nav-icon {
@@ -307,7 +337,7 @@ if (isMobile.value) {
 /* 侧边栏底部 */
 .sidebar-footer {
   padding: 16px;
-  border-top: 1px solid #e4e7ed;
+  border-top: 1px solid var(--el-border-color-light);
 }
 
 .footer-info {
@@ -315,13 +345,13 @@ if (isMobile.value) {
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: #f5f7fa;
+  background: var(--el-fill-color-light);
   border-radius: 6px;
 }
 
 .footer-text {
   font-size: 12px;
-  color: #67C23A;
+  color: var(--el-color-success);
   font-weight: 500;
 }
 
@@ -349,7 +379,6 @@ if (isMobile.value) {
   z-index: 2;
 }
 
-/* 确保 slot 内容填满宽度 */
 .main-content > * {
   width: 100% !important;
   max-width: 100% !important;
@@ -360,7 +389,6 @@ if (isMobile.value) {
   margin-left: 0;
 }
 
-/* 滚动条样式 */
 .sidebar-nav::-webkit-scrollbar {
   width: 4px;
 }
@@ -370,11 +398,11 @@ if (isMobile.value) {
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb {
-  background: #dcdfe6;
+  background: var(--el-border-color);
   border-radius: 2px;
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb:hover {
-  background: #c0c4cc;
+  background: var(--el-border-color-hover);
 }
 </style>

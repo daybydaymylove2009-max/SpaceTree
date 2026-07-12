@@ -1,10 +1,10 @@
 <script setup lang="ts">
 /**
- * 关于中心 - MFT/USN 驱动极客优化版
+ * 关于中心 - SpaceTree v3.40.0
  * @component AboutCenter
  * @description 展示版本变化、学术架构特性、技术栈亮点以及更新日志，整体采用现代玻璃拟态（Glassmorphism）视觉设计
  */
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import {
   InfoFilled, CopyDocument, Document,
@@ -12,104 +12,69 @@ import {
   Medal, EditPen, Coin, Files, Refresh
 } from '@element-plus/icons-vue';
 import { getVersion, getTauriVersion } from '@tauri-apps/api/app';
+import { t, getLanguage } from '../utils/i18n';
+
+// 强制更新 key
+const forceUpdateKey = ref(0);
+const onLanguageChange = () => {
+  forceUpdateKey.value++;
+};
 
 // 版本信息
-const appVersion = ref('3.0.0');
+const appVersion = ref('3.40.0');
 const tauriVersion = ref('');
 const rustVersion = ref('1.77.2');
-const buildDate = ref('2026-06-22');
+const buildDate = ref('2026-07-12');
 
 // 应用信息
-const appInfo = ref({
-  name: '重复文件猎手 (MFT/USN 极速版)',
-  fullName: 'Duplicate File Hunter - Geek Edition',
-  description: '一款极速文件管理器与查重系统，支持 Windows 日志（USN）特权枚举、物理卷 GUID 盘符自愈重定位、前 K 字节部分哈希匹配及百万级虚拟滚动工作台。',
-  author: '智博网络 & Gemini AI',
-  website: 'https://github.com/daybydaymylove2009-max/file-manager',
+const appInfo = {
+  name: 'SpaceTree',
+  fullName: 'SpaceTree - Extreme Disk Treemap Utility',
   license: 'MIT License',
-  copyright: '© 2026 智博网络. All rights reserved.'
-});
+  copyright: '© 2026 SpaceTree Dev. All rights reserved.'
+};
 
 // 技术栈
-const techStack = ref([
+const techStack = [
   { name: 'Tauri FFI', version: '2.10.3', description: 'Rust 驱动的桌面应用内核', icon: '🦀', color: '#FF6B6B' },
   { name: 'Vue.js 3', version: '3.5.30', description: '声明式前端视图开发框架', icon: '💚', color: '#4FC08D' },
-  { name: 'Element Plus', version: '2.13.6', description: '全面中文化极客组件库', icon: '🔷', color: '#409EFF' },
+  { name: 'Element Plus', version: '2.13.6', description: '高颜值 Vue3 组件库', icon: '🔷', color: '#409EFF' },
   { name: 'Rust Win-FFI', version: '1.77.2', description: '物理驱动器底层 FFI 模块', icon: '⚙️', color: '#DEA584' },
   { name: 'SQLite WAL', version: '3.45', description: '开启 WAL 的高并发数据库', icon: '🗄️', color: '#003B57' },
   { name: 'TypeScript', version: '5.9', description: '强类型 JavaScript 开发超集', icon: '🔷', color: '#3178C6' }
-]);
+];
 
 // 主要功能
-const features = ref([
-  { title: 'USN 级枚举', description: '支持特权级物理磁盘 USN 日志秒级枚举，扫描提速 100 倍', icon: Lightning, color: '#409EFF' },
-  { title: '部分哈希查重', description: '支持设置前 K 字节哈希比对，完美兼容截断或损毁文件', icon: Star, color: '#E6A23C' },
-  { title: '盘符漂移自愈', description: '自动比对卷 GUID，毫秒级快速纠正拔插U盘的断联路径', icon: Refresh, color: '#67C23A' },
-  { title: '自研虚拟滚动', description: '扁平一维虚拟列表渲染，百万数据下保持 60 FPS 顺滑', icon: Files, color: '#909399' },
-  { title: '无锁规约哈希', description: 'Rayon 并行规约引擎无锁计算哈希，榨干多核多线程性能', icon: Cpu, color: '#F56C6C' },
-  { title: '实时去抖检索', description: '150ms 动态防抖搜索，支持正则过滤与关键词多重高亮', icon: Document, color: '#8E44AD' }
-]);
+const features = [
+  { title: 'zh-CN' === getLanguage() ? 'USN 级枚举' : 'MFT USN speedup', description: 'zh-CN' === getLanguage() ? '支持特权级物理磁盘 USN 日志秒级枚举，扫描提速 100 倍' : 'Instant MFT enumeration on NTFS filesystem', icon: Lightning, color: '#409EFF' },
+  { title: 'zh-CN' === getLanguage() ? '部分哈希查重' : 'Partial Match', description: 'zh-CN' === getLanguage() ? '支持设置前 K 字节哈希比对，完美兼容截断或损毁文件' : 'Allows matching first K bytes of files', icon: Star, color: '#E6A23C' },
+  { title: 'zh-CN' === getLanguage() ? '盘符漂移自愈' : 'Path Healing', description: 'zh-CN' === getLanguage() ? '自动比对卷 GUID，毫秒级快速纠正拔插U盘的断联路径' : 'Self-heals USB/HDD paths on GUID mismatch', icon: Refresh, color: '#67C23A' },
+  { title: 'zh-CN' === getLanguage() ? '自研虚拟滚动' : '1D Virtual Scroll', description: 'zh-CN' === getLanguage() ? '扁平一维虚拟列表渲染，百万数据下保持 60 FPS 顺滑' : 'Flattens duplicate groups in a 60 FPS list', icon: Files, color: '#909399' },
+  { title: 'zh-CN' === getLanguage() ? '无锁规约哈希' : 'Parallel Rayon', description: 'zh-CN' === getLanguage() ? 'Rayon 并行规约引擎无锁计算哈希，榨干多核多线程性能' : 'Zero lock path hashing maximizing CPU throughput', icon: Cpu, color: '#F56C6C' },
+  { title: 'zh-CN' === getLanguage() ? '实时去抖检索' : 'Debounced Search', description: 'zh-CN' === getLanguage() ? '150ms 动态防抖搜索，支持正则过滤与关键词多重高亮' : '150ms delay indexing with regex support', icon: Document, color: '#8E44AD' }
+];
 
 // 核心亮点
-const highlights = ref([
-  { label: '扫描处理速度', value: '百万/秒', desc: 'USN 日志文件检索', icon: Trophy },
-  { label: '物理路径纠错', value: '毫秒级', desc: '驱动 GUID 重映射', icon: Refresh },
-  { label: '界面滚动帧率', value: '60 FPS', desc: '扁平化虚拟化引擎', icon: Lightning },
-  { label: '本地数据库', value: 'WAL 并发', desc: 'SQLite 并发缓存优化', icon: Medal }
-]);
-
-// 更新日志
-const changelog = ref([
-  {
-    version: 'v3.0.0 (Windows USN 特权驱动级核心版)',
-    date: '2026-06-23',
-    type: 'major',
-    changes: [
-      '【扫描算法飞跃：USN特权级】对比 v2.0.0 传统用户态目录递归扫描，v3.0.0 实现管理员级直接读取 MFT/USN 日志驱动文件秒级检索，全盘扫描速度暴升 100 倍以上。',
-      '【路径断联自愈：GUID重映射】对比 v2.0.0 在插拔移动硬盘/U盘后数据库记录直接失效，v3.0.0 支持卷 GUID 自动映射感知，毫秒级自愈重定位路径，无需耗时重扫。',
-      '【去重兼容性：部分哈希匹配】对比 v2.0.0 单一完整哈希查重，v3.0.0 新增前 K 字节部分哈希查重 (Partial Match)，对由于损坏、截断导致全哈希失效的文件提供完美比对支持。',
-      '【查重渲染帧率：一维虚拟滚动】对比 v2.0.0 卡顿的折叠面板嵌套多级表格 DOM，v3.0.0 引入自研一维打平 VirtualList 组件，使百万级查重条目下滚动帧率稳定在 60 FPS。',
-      '【检索交互手感：输入即搜索】对比 v2.0.0 的手动触发翻页检索，v3.0.0 引入 150ms 实时检索防抖、无限虚拟触底追加及正则匹配词高亮，体验完全对齐极速检索标准。',
-      '【界面毛玻璃布局：极客三栏】对比 v2.0.0 杂乱的页面，v3.0.0 升级为玻璃拟态三栏工作台，将物理驱动器控制、查重主工作台与属性图片预览融合于单屏工作流。'
-    ]
-  },
-  {
-    version: 'v2.0.0 (企业级扫描与 IndexedDB 优化版)',
-    date: '2026-04-21',
-    type: 'major',
-    changes: [
-      '【扫描器】支持百万级文件秒级扫描、并行处理与智能分组',
-      '【列表呈现】支持百万级数据分片加载与缓存内存管理',
-      '【数据存储】采用 IndexedDB 结构层作为辅助，实现版本控制与数据备份',
-      '【日志系统】支持五级日志、批量持久化与日志定时轮转',
-      '【代码质量】优化并消除前端潜在的未使用变量及 warnings'
-    ]
-  },
-  {
-    version: 'v1.1.0',
-    date: '2025-04-18',
-    type: 'minor',
-    changes: [
-      '新增扫描历史管理功能',
-      '优化图片相似度检测算法',
-      '新增合规性检查报告'
-    ]
-  }
-]);
+const highlights = [
+  { label: 'zh-CN' === getLanguage() ? '扫描处理速度' : 'Scan Speed', value: 'zh-CN' === getLanguage() ? '百万/秒' : '1M+ files/s', desc: 'MFT/USN Indexer', icon: Trophy },
+  { label: 'zh-CN' === getLanguage() ? '物理路径纠错' : 'Path Resolution', value: 'zh-CN' === getLanguage() ? '毫秒级' : 'ms level', desc: 'GUID volume mapper', icon: Refresh },
+  { label: 'zh-CN' === getLanguage() ? '界面滚动帧率' : 'Scroll FPS', value: '60 FPS', desc: '1D Flatten list', icon: Lightning },
+  { label: 'zh-CN' === getLanguage() ? '本地数据库' : 'Database engine', value: 'WAL Mode', desc: 'SQLite concurrency', icon: Medal }
+];
 
 // 复制版本信息
 async function copyVersionInfo() {
-  const info = `应用名称: ${appInfo.value.name}
-版本: ${appVersion.value}
-Tauri 内核: ${tauriVersion.value || '2.10.3'}
-Rust 编译器: ${rustVersion.value}
-构建日期: ${buildDate.value}`;
+  const info = `Application: ${appInfo.name}
+Version: ${appVersion.value}
+Tauri Core: ${tauriVersion.value || '2.10.3'}
+Rust Toolchain: ${rustVersion.value}
+Build Date: ${buildDate.value}`;
 
   try {
     await navigator.clipboard.writeText(info);
-    ElMessage.success('版本信息已成功复制到剪贴板');
+    ElMessage.success(t('common.copySuccess'));
   } catch (error) {
-    ElMessage.error('复制失败: ' + error);
+    ElMessage.error(t('common.error') + ': ' + error);
   }
 }
 
@@ -128,22 +93,18 @@ async function loadVersionInfo() {
   }
 }
 
-function getVersionType(type: string) {
-  const typeMap: Record<string, string> = {
-    major: 'danger',
-    minor: 'warning',
-    initial: 'info'
-  };
-  return typeMap[type] || 'info';
-}
-
 onMounted(() => {
+  window.addEventListener('app-lang-change', onLanguageChange);
   loadVersionInfo();
+});
+
+onUnmounted(() => {
+  window.removeEventListener('app-lang-change', onLanguageChange);
 });
 </script>
 
 <template>
-  <div class="about-center-glass">
+  <div class="about-center-glass" :key="forceUpdateKey">
     <!-- 玻璃英雄头部 -->
     <div class="about-hero-glass">
       <div class="hero-background">
@@ -163,7 +124,7 @@ onMounted(() => {
 
         <h1 class="app-name">{{ appInfo.name }}</h1>
         <p class="app-fullname">{{ appInfo.fullName }}</p>
-        <p class="app-description">{{ appInfo.description }}</p>
+        <p class="app-description">{{ t('about.subtitle') }}</p>
 
         <div class="hero-actions">
           <el-button
@@ -174,16 +135,16 @@ onMounted(() => {
             :icon="CopyDocument"
             class="copy-btn"
           >
-            复制版本与环境信息
+            {{ t('about.copyInfo') }}
           </el-button>
           <el-button
             size="large"
             round
-            @click="openExternalLink(appInfo.website)"
+            @click="openExternalLink('https://github.com/daybydaymylove2009-max/file-manager')"
             class="github-btn"
           >
             <template #icon><span>🐙</span></template>
-            GitHub 源码
+            {{ t('about.website') }}
           </el-button>
         </div>
       </div>
@@ -216,7 +177,7 @@ onMounted(() => {
     <div class="version-section">
       <div class="section-title-glass">
         <el-icon><Coin /></el-icon>
-        <span>系统环境</span>
+        <span>{{ t('about.techDashboard') }}</span>
       </div>
       <div class="env-dashboard-grid">
         <div class="glass-card env-stat-widget">
@@ -225,7 +186,7 @@ onMounted(() => {
           </div>
           <div class="version-info">
             <div class="version-number">{{ appVersion }}</div>
-            <div class="version-label">软件版本</div>
+            <div class="version-label">{{ t('zh-CN' === getLanguage() ? '软件版本' : 'App Version') }}</div>
           </div>
         </div>
         <div class="glass-card env-stat-widget">
@@ -234,7 +195,7 @@ onMounted(() => {
           </div>
           <div class="version-info">
             <div class="version-number">{{ tauriVersion || '2.10.3' }}</div>
-            <div class="version-label">Tauri 引擎</div>
+            <div class="version-label">Tauri Engine</div>
           </div>
         </div>
         <div class="glass-card env-stat-widget">
@@ -243,7 +204,7 @@ onMounted(() => {
           </div>
           <div class="version-info">
             <div class="version-number">{{ buildDate }}</div>
-            <div class="version-label">优化交付日期</div>
+            <div class="version-label">Build Date</div>
           </div>
         </div>
       </div>
@@ -253,7 +214,7 @@ onMounted(() => {
     <div class="features-section">
       <div class="section-title-glass">
         <el-icon><Trophy /></el-icon>
-        <span>优化核心特性</span>
+        <span>{{ t('zh-CN' === getLanguage() ? '优化核心特性' : 'Key Advantages') }}</span>
       </div>
       <el-row :gutter="16">
         <el-col :span="8" v-for="(feature, index) in features" :key="feature.title">
@@ -276,7 +237,7 @@ onMounted(() => {
     <div class="tech-section">
       <div class="section-title-glass">
         <el-icon><Files /></el-icon>
-        <span>底层技术演进</span>
+        <span>{{ t('about.techDashboard') }}</span>
       </div>
       <div class="tech-grid">
         <div
@@ -295,58 +256,21 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- 更新升级日志 -->
-    <div class="changelog-section">
-      <div class="section-title-glass">
-        <el-icon><Document /></el-icon>
-        <span>升级更新日志</span>
-      </div>
-      <div class="glass-card changelog-timeline">
-        <div
-          v-for="(item, index) in changelog"
-          :key="index"
-          class="changelog-item"
-          :class="{ 'latest': index === 0 }"
-        >
-          <div class="changelog-marker" :class="item.type">
-            <div class="marker-dot"></div>
-            <div v-if="index !== changelog.length - 1" class="marker-line"></div>
-          </div>
-          <div class="changelog-content">
-            <div class="changelog-header">
-              <div class="version-tag">
-                <el-tag :type="getVersionType(item.type)" effect="dark" size="small">
-                  {{ item.version }}
-                </el-tag>
-                <span v-if="index === 0" class="latest-badge">最新优化</span>
-              </div>
-              <span class="changelog-date">{{ item.date }}</span>
-            </div>
-            <ul class="changelog-list">
-              <li v-for="(change, cIndex) in item.changes" :key="cIndex">
-                {{ change }}
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- 版权说明 -->
     <div class="glass-card copyright-section-glass">
       <div class="copyright-content">
         <div class="copyright-main">
           <p class="copyright-text">{{ appInfo.copyright }}</p>
-          <p class="license-text">发布许可证: {{ appInfo.license }}</p>
+          <p class="license-text">License: {{ appInfo.license }}</p>
         </div>
         <div class="copyright-actions">
           <el-button
             text
             type="primary"
-            @click="openExternalLink(appInfo.website)"
+            @click="openExternalLink('https://github.com/daybydaymylove2009-max/file-manager')"
           >
             <template #icon><span>🐙</span></template>
-            技术源码库
+            {{ t('about.website') }}
           </el-button>
           <el-button
             text
@@ -354,7 +278,7 @@ onMounted(() => {
             @click="openExternalLink('https://github.com/daybydaymylove2009-max/file-manager/issues')"
           >
             <template #icon><span>💬</span></template>
-            提交Issue反馈
+            {{ t('about.issue') }}
           </el-button>
         </div>
       </div>
@@ -369,12 +293,11 @@ onMounted(() => {
   padding: 0 16px 40px;
 }
 
-/* 玻璃英雄头部 */
 .about-hero-glass {
   position: relative;
   padding: 50px 30px;
   margin-bottom: 30px;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%);
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%);
   overflow: hidden;
   border-radius: 0 0 24px 24px;
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -505,47 +428,23 @@ onMounted(() => {
 
 /* 玻璃卡片 */
 .glass-card {
-  background: rgba(255, 255, 255, 0.65);
+  background: var(--el-bg-color-overlay);
   backdrop-filter: blur(16px) saturate(160%);
   -webkit-backdrop-filter: blur(16px) saturate(160%);
-  border: 1px solid rgba(255, 255, 255, 0.45);
+  border: 1px solid var(--el-border-color-light);
   border-radius: 14px;
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.03);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.02);
   transition: all 0.3s ease;
 }
 
 .glass-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 10px 24px rgba(31, 38, 135, 0.06);
-  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 10px 24px rgba(31, 38, 135, 0.05);
 }
 
 /* 极客技术仪表盘（核心亮点） */
 .highlights-section {
   margin-bottom: 30px;
-}
-
-@media (max-width: 900px) {
-  .env-dashboard-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-@media (max-width: 600px) {
-  .env-dashboard-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-  .env-stat-widget {
-    padding: 10px;
-    gap: 8px;
-    min-height: 60px;
-  }
-  .version-number {
-    font-size: 13px;
-  }
-  .version-label {
-    font-size: 10px;
-  }
 }
 
 .highlights-dashboard-grid {
@@ -558,7 +457,7 @@ onMounted(() => {
 
 @media (max-width: 1080px) {
   .highlights-dashboard-grid {
-    grid-template-columns: repeat(2, 1fr); /* 降至双列，防止宽度挤压溢出 */
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -587,10 +486,11 @@ onMounted(() => {
   justify-content: center;
   min-width: 0;
   overflow: hidden;
+  text-align: left;
 }
 
 .widget-value {
-  font-size: 15px; /* 稍减小字号，进一步保障窄宽屏 */
+  font-size: 15px;
   font-weight: 850;
   letter-spacing: -0.5px;
   line-height: 1.25;
@@ -627,7 +527,7 @@ onMounted(() => {
 .widget-label {
   font-size: 11.5px;
   font-weight: 700;
-  color: #303133;
+  color: var(--el-text-color-primary);
   line-height: 1.25;
   display: block;
   width: 100%;
@@ -638,7 +538,7 @@ onMounted(() => {
 
 .widget-desc {
   font-size: 11px;
-  color: #909399;
+  color: var(--el-text-color-placeholder);
   margin-top: 2px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -656,12 +556,12 @@ onMounted(() => {
   gap: 8px;
   font-size: 16px;
   font-weight: 600;
-  color: #303133;
+  color: var(--el-text-color-primary);
   margin-bottom: 16px;
 }
 
 .section-title-glass .el-icon {
-  color: #409EFF;
+  color: var(--el-color-primary);
 }
 
 .env-dashboard-grid {
@@ -692,18 +592,18 @@ onMounted(() => {
 }
 
 .version-icon.blue {
-  background: rgba(25, 118, 210, 0.1);
-  color: #1976d2;
+  background: rgba(64, 158, 255, 0.1);
+  color: #409EFF;
 }
 
 .version-icon.purple {
-  background: rgba(123, 31, 162, 0.1);
-  color: #7b1fa2;
+  background: rgba(142, 68, 173, 0.1);
+  color: #8e44ad;
 }
 
 .version-icon.green {
-  background: rgba(56, 142, 60, 0.1);
-  color: #388e3c;
+  background: rgba(103, 194, 58, 0.1);
+  color: #67C23A;
 }
 
 .version-info {
@@ -713,12 +613,13 @@ onMounted(() => {
   justify-content: center;
   min-width: 0;
   overflow: hidden;
+  text-align: left;
 }
 
 .version-number {
   font-size: 14.5px;
   font-weight: 800;
-  color: #303133;
+  color: var(--el-text-color-primary);
   line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -727,7 +628,7 @@ onMounted(() => {
 
 .version-label {
   font-size: 11px;
-  color: #909399;
+  color: var(--el-text-color-placeholder);
   margin-top: 2px;
 }
 
@@ -754,17 +655,21 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
+.feature-content {
+  text-align: left;
+}
+
 .feature-content h4 {
   margin: 0 0 4px 0;
   font-size: 14px;
   font-weight: 600;
-  color: #303133;
+  color: var(--el-text-color-primary);
 }
 
 .feature-content p {
   margin: 0;
   font-size: 12px;
-  color: #909399;
+  color: var(--el-text-color-secondary);
   line-height: 1.5;
 }
 
@@ -798,124 +703,21 @@ onMounted(() => {
 .tech-name {
   font-size: 14px;
   font-weight: 600;
-  color: #303133;
+  color: var(--el-text-color-primary);
 }
 
 .tech-version {
   font-size: 11px;
-  color: #409EFF;
-  background: rgba(64,158,255,0.1);
+  color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
   padding: 1px 6px;
   border-radius: 8px;
 }
 
 .tech-desc {
   font-size: 12px;
-  color: #909399;
-}
-
-/* 更新日志 */
-.changelog-section {
-  margin-bottom: 30px;
-}
-
-.changelog-timeline {
-  padding: 24px;
-}
-
-.changelog-item {
-  display: flex;
-  gap: 16px;
-  padding-bottom: 20px;
-}
-
-.changelog-item:last-child {
-  padding-bottom: 0;
-}
-
-.changelog-marker {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-.marker-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #dcdfe6;
-  border: 3px solid white;
-  box-shadow: 0 0 0 2px #dcdfe6;
-}
-
-.changelog-item.latest .marker-dot {
-  background: #409EFF;
-  box-shadow: 0 0 0 2px #409EFF;
-}
-
-.changelog-marker.major .marker-dot {
-  background: #f56c6c;
-  box-shadow: 0 0 0 2px #f56c6c;
-}
-
-.changelog-marker.minor .marker-dot {
-  background: #e6a23c;
-  box-shadow: 0 0 0 2px #e6a23c;
-}
-
-.marker-line {
-  width: 2px;
-  flex: 1;
-  background: rgba(220, 223, 230, 0.4);
-  margin-top: 6px;
-}
-
-.changelog-content {
-  flex: 1;
-}
-
-.changelog-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.version-tag {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.latest-badge {
-  font-size: 10px;
-  color: #409EFF;
-  background: rgba(64,158,255,0.1);
-  padding: 1px 6px;
-  border-radius: 6px;
-  font-weight: 500;
-}
-
-.changelog-date {
-  font-size: 12px;
-  color: #909399;
-}
-
-.changelog-list {
-  margin: 0;
-  padding-left: 16px;
-}
-
-.changelog-list li {
-  font-size: 12.5px;
-  color: #606266;
-  margin-bottom: 4px;
-  line-height: 1.5;
-}
-
-.changelog-list li:last-child {
-  margin-bottom: 0;
+  color: var(--el-text-color-secondary);
+  text-align: left;
 }
 
 /* 版权与链接 */
@@ -937,13 +739,13 @@ onMounted(() => {
 
 .copyright-text {
   font-size: 13px;
-  color: #606266;
+  color: var(--el-text-color-regular);
   margin: 0 0 2px 0;
 }
 
 .license-text {
   font-size: 12px;
-  color: #909399;
+  color: var(--el-text-color-placeholder);
   margin: 0;
 }
 
@@ -953,11 +755,14 @@ onMounted(() => {
 }
 
 @media (max-width: 900px) {
-  @media (max-width: 900px) {
   .env-dashboard-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  .highlights-dashboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
+
 @media (max-width: 600px) {
   .env-dashboard-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -973,40 +778,6 @@ onMounted(() => {
   }
   .version-label {
     font-size: 10px;
-  }
-}
-
-.highlights-dashboard-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-@media (max-width: 600px) {
-  @media (max-width: 900px) {
-  .env-dashboard-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-@media (max-width: 600px) {
-  .env-dashboard-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-  .env-stat-widget {
-    padding: 10px;
-    gap: 8px;
-    min-height: 60px;
-  }
-  .version-number {
-    font-size: 13px;
-  }
-  .version-label {
-    font-size: 10px;
-  }
-}
-
-.highlights-dashboard-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
   }
   .tech-stat-widget {
     padding: 10px;
@@ -1018,7 +789,6 @@ onMounted(() => {
   }
 }
 
-/* 响应式适配 */
 @media (max-width: 768px) {
   .about-hero-glass {
     padding: 30px 16px;

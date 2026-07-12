@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { 
   Setting, Brush, Document, Bell, 
@@ -7,15 +7,22 @@ import {
 } from '@element-plus/icons-vue';
 import { invoke } from '@tauri-apps/api/core';
 import { useTheme } from '../composables/useTheme';
+import { t, setLanguage, getLanguage, type Language } from '../utils/i18n';
 
 const props = defineProps<{
   db_path: string;
 }>()
 
+// 强制组件刷新 key，配合手写语言包达成无刷新秒切
+const forceUpdateKey = ref(0);
+const onLanguageChange = () => {
+  forceUpdateKey.value++;
+};
+
 // 使用主题管理
 const { currentTheme, setTheme, isDark } = useTheme();
 
-// 引入性能和特效管理
+// 性能和特效管理
 import { usePerformance } from '../composables/usePerformance';
 const { enableGlassEffect, setGlassEffect } = usePerformance();
 
@@ -26,7 +33,7 @@ const activeCategory = ref('general');
 const generalSettings = ref({
   autoStart: false,
   minimizeToTray: true,
-  language: 'zh-CN',
+  language: getLanguage(),
   theme: currentTheme.value,
   enableDeleteFullAudit: true
 });
@@ -70,10 +77,14 @@ const storageStats = ref({
   logFileSize: 0
 });
 
+// 处理语言切换
+function handleLanguageChange(lang: string) {
+  setLanguage(lang as Language);
+}
+
 // 保存设置
 async function saveSettings() {
   try {
-    // 保存到后端数据库
     await invoke('save_app_settings', {
       db_path: props.db_path,
       general: {
@@ -104,7 +115,6 @@ async function saveSettings() {
       }
     });
 
-    // 同时保存到本地存储作为缓存
     localStorage.setItem('dfh_settings', JSON.stringify({
       general: generalSettings.value,
       scan: scanSettings.value,
@@ -112,23 +122,21 @@ async function saveSettings() {
       notification: notificationSettings.value
     }));
 
-    ElMessage.success('设置已保存');
+    ElMessage.success(t('common.success'));
   } catch (error) {
-    ElMessage.error(`保存失败: ${error}`);
+    ElMessage.error(`${t('common.error')}: ${error}`);
   }
 }
 
 // 加载设置
 async function loadSettings() {
   try {
-    // 优先从后端数据库加载
     const settings = await invoke('load_app_settings', { db_path: props.db_path }) as any;
-
     if (settings) {
       generalSettings.value = {
         autoStart: settings.general.auto_start,
         minimizeToTray: settings.general.minimize_to_tray,
-        language: settings.general.language,
+        language: settings.general.language || getLanguage(),
         theme: settings.general.theme,
         enableDeleteFullAudit: generalSettings.value.enableDeleteFullAudit
       };
@@ -155,7 +163,6 @@ async function loadSettings() {
     }
   } catch (error) {
     console.error('从后端加载设置失败，尝试从本地存储加载', error);
-    // 如果后端加载失败，尝试从本地存储加载
     try {
       const saved = localStorage.getItem('dfh_settings');
       if (saved) {
@@ -175,20 +182,20 @@ async function loadSettings() {
 async function clearDatabase() {
   try {
     await ElMessageBox.confirm(
-      '确定要清空数据库吗？所有扫描记录将被删除，此操作不可恢复！',
-      '清空数据库',
+      t('zh-CN' === getLanguage() ? '确定要清空数据库吗？所有扫描记录将被删除，此操作不可恢复！' : 'Are you sure you want to clear the database? All records will be deleted permanently!'),
+      t('zh-CN' === getLanguage() ? '清空数据库' : 'Clear Database'),
       {
-        confirmButtonText: '清空',
-        cancelButtonText: '取消',
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
         type: 'error'
       }
     );
 
     await invoke('clear_database', { db_path: props.db_path });
-    ElMessage.success('数据库已清空');
+    ElMessage.success(t('common.success'));
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error(`清空失败: ${error}`);
+      ElMessage.error(`${t('common.error')}: ${error}`);
     }
   }
 }
@@ -197,20 +204,20 @@ async function clearDatabase() {
 async function clearHistory() {
   try {
     await ElMessageBox.confirm(
-      '确定要清空所有扫描历史吗?',
-      '清空历史',
+      t('zh-CN' === getLanguage() ? '确定要清空所有扫描历史吗?' : 'Are you sure you want to clear all scan history?'),
+      t('zh-CN' === getLanguage() ? '清空历史' : 'Clear History'),
       {
-        confirmButtonText: '清空',
-        cancelButtonText: '取消',
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
         type: 'warning'
       }
     );
 
     await invoke('clear_scan_history', { db_path: props.db_path });
-    ElMessage.success('历史记录已清空');
+    ElMessage.success(t('common.success'));
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error(`清空失败: ${error}`);
+      ElMessage.error(`${t('common.error')}: ${error}`);
     }
   }
 }
@@ -224,62 +231,56 @@ function formatSize(bytes: number): string {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-// 加载存储统计
 const lastError = ref<string>('');
 
 async function loadStorageStats() {
   try {
     lastError.value = '';
-    console.log('正在加载存储统计, db_path:', props.db_path);
-
     if (!props.db_path) {
-      lastError.value = '数据库路径为空';
+      lastError.value = 'Database path is empty';
       return;
     }
 
     const stats = await invoke('get_storage_stats', { db_path: props.db_path }) as any;
-    console.log('获取到存储统计:', stats);
-
-    // 确保数值正确转换
     storageStats.value = {
       databaseSize: Number(stats.database_size) || 0,
       scanHistoryCount: Number(stats.scan_history_count) || 0,
       filesCount: Number(stats.files_count) || 0,
       logFileSize: Number(stats.log_file_size) || 0
     };
-
-    console.log('更新后的存储统计:', storageStats.value);
   } catch (error: any) {
     console.error('加载存储统计失败', error);
     lastError.value = String(error);
-    ElMessage.error('加载存储统计失败: ' + error);
   }
 }
 
-// 处理存储管理分类点击
 async function handleStorageCategoryClick() {
   activeCategory.value = 'storage';
-  // 切换到存储管理时刷新数据
   await loadStorageStats();
 }
 
 onMounted(async () => {
+  window.addEventListener('app-lang-change', onLanguageChange);
   await loadSettings();
   await loadStorageStats();
+});
+
+onUnmounted(() => {
+  window.removeEventListener('app-lang-change', onLanguageChange);
 });
 </script>
 
 <template>
-  <div class="settings-center">
+  <div class="settings-center" :key="forceUpdateKey">
     <!-- 页面头部 -->
     <div class="page-header">
       <div class="header-title">
-        <h2>设置</h2>
-        <p class="header-subtitle">配置应用程序偏好</p>
+        <h2>{{ t('menu.settings') }}</h2>
+        <p class="header-subtitle">{{ t('settings.subtitle') }}</p>
       </div>
       <el-button type="primary" @click="saveSettings">
         <el-icon><Check /></el-icon>
-        保存设置
+        {{ t('common.confirm') }}
       </el-button>
     </div>
 
@@ -292,7 +293,7 @@ onMounted(async () => {
           @click="activeCategory = 'general'"
         >
           <el-icon><Setting /></el-icon>
-          <span>通用设置</span>
+          <span>{{ t('settings.title') }}</span>
         </div>
         <div 
           class="settings-category" 
@@ -300,7 +301,7 @@ onMounted(async () => {
           @click="activeCategory = 'scan'"
         >
           <el-icon><Refresh /></el-icon>
-          <span>扫描设置</span>
+          <span>{{ t('menu.scan') }}</span>
         </div>
         <div 
           class="settings-category" 
@@ -308,7 +309,7 @@ onMounted(async () => {
           @click="activeCategory = 'report'"
         >
           <el-icon><Document /></el-icon>
-          <span>报告设置</span>
+          <span>{{ t('analysis.title') }}</span>
         </div>
         <div 
           class="settings-category" 
@@ -316,7 +317,7 @@ onMounted(async () => {
           @click="activeCategory = 'notification'"
         >
           <el-icon><Bell /></el-icon>
-          <span>通知设置</span>
+          <span>{{ t('zh-CN' === getLanguage() ? '通知设置' : 'Notifications') }}</span>
         </div>
         <div
           class="settings-category"
@@ -324,7 +325,7 @@ onMounted(async () => {
           @click="handleStorageCategoryClick"
         >
           <el-icon><Document /></el-icon>
-          <span>存储管理</span>
+          <span>{{ t('zh-CN' === getLanguage() ? '存储管理' : 'Storage') }}</span>
         </div>
       </aside>
 
@@ -332,47 +333,48 @@ onMounted(async () => {
       <main class="settings-content">
         <!-- 通用设置 -->
         <div v-show="activeCategory === 'general'" class="settings-panel">
-          <h3>通用设置</h3>
+          <h3>{{ t('settings.title') }}</h3>
           
           <el-form :model="generalSettings" label-position="top" class="settings-form">
-            <el-form-item label="语言">
-              <el-select v-model="generalSettings.language" style="width: 200px">
-                <el-option label="简体中文" value="zh-CN" />
-                <el-option label="English" value="en-US" />
+            <el-form-item :label="t('settings.langTitle')">
+              <el-select v-model="generalSettings.language" style="width: 200px" @change="handleLanguageChange">
+                <el-option :label="t('settings.zh')" value="zh-CN" />
+                <el-option :label="t('settings.en')" value="en-US" />
               </el-select>
+              <div class="form-hint">{{ t('settings.langDesc') }}</div>
             </el-form-item>
 
-            <el-form-item label="主题">
+            <el-form-item :label="t('settings.themeTitle')">
               <el-radio-group v-model="generalSettings.theme" @change="(val: string) => setTheme(val as any)">
                 <el-radio-button label="light">
-                  <el-icon><Sunny /></el-icon> 浅色
+                  <el-icon><Sunny /></el-icon> {{ t('zh-CN' === getLanguage() ? '浅色' : 'Light') }}
                 </el-radio-button>
                 <el-radio-button label="dark">
-                  <el-icon><Moon /></el-icon> 深色
+                  <el-icon><Moon /></el-icon> {{ t('zh-CN' === getLanguage() ? '深色' : 'Dark') }}
                 </el-radio-button>
-                <el-radio-button label="auto">自动</el-radio-button>
+                <el-radio-group label="auto">{{ t('zh-CN' === getLanguage() ? '自动' : 'Auto') }}</el-radio-group>
               </el-radio-group>
               <div class="theme-preview" style="margin-top: 8px;">
-                <el-tag v-if="isDark" type="info" size="small">当前: 深色模式</el-tag>
-                <el-tag v-else type="success" size="small">当前: 浅色模式</el-tag>
+                <el-tag v-if="isDark" type="info" size="small">{{ t('zh-CN' === getLanguage() ? '当前: 深色模式' : 'Active: Dark') }}</el-tag>
+                <el-tag v-else type="success" size="small">{{ t('zh-CN' === getLanguage() ? '当前: 浅色模式' : 'Active: Light') }}</el-tag>
               </div>
             </el-form-item>
 
             <el-form-item>
               <el-checkbox v-model="generalSettings.minimizeToTray">
-                最小化到系统托盘
+                {{ t('zh-CN' === getLanguage() ? '最小化到系统托盘' : 'Minimize to system tray') }}
               </el-checkbox>
             </el-form-item>
 
-            <el-form-item label="视觉特效">
+            <el-form-item :label="t('zh-CN' === getLanguage() ? '视觉特效' : 'Visual Effects')">
               <el-checkbox :model-value="enableGlassEffect" @update:model-value="setGlassEffect">
-                启用高级磨砂玻璃特效 (若老旧电脑界面卡顿建议关闭)
+                {{ t('zh-CN' === getLanguage() ? '启用高级磨砂玻璃特效 (若老旧电脑界面卡顿建议关闭)' : 'Enable glassmorphism window effects (disable if laggy)') }}
               </el-checkbox>
             </el-form-item>
 
-            <el-form-item label="去重安全审计">
+            <el-form-item :label="t('zh-CN' === getLanguage() ? '去重安全审计' : 'Deduplication Safety')">
               <el-checkbox v-model="generalSettings.enableDeleteFullAudit">
-                物理删除前启用全文件哈希安全审计 (默认开启，对齐标杆防误删底线)
+                {{ t('zh-CN' === getLanguage() ? '物理删除前启用全文件哈希安全审计 (默认开启，对齐标杆防误删底线)' : 'Perform byte-by-byte verification before file deletion (highly recommended)') }}
               </el-checkbox>
             </el-form-item>
           </el-form>
@@ -380,44 +382,44 @@ onMounted(async () => {
 
         <!-- 扫描设置 -->
         <div v-show="activeCategory === 'scan'" class="settings-panel">
-          <h3>扫描设置</h3>
+          <h3>{{ t('menu.scan') }}</h3>
           
           <el-form :model="scanSettings" label-position="top" class="settings-form">
-            <el-form-item label="默认扫描模式">
+            <el-form-item :label="t('zh-CN' === getLanguage() ? '默认扫描模式' : 'Default Scan Mode')">
               <el-radio-group v-model="scanSettings.defaultMode">
-                <el-radio-button label="incremental">增量扫描</el-radio-button>
-                <el-radio-button label="full">全量扫描</el-radio-button>
+                <el-radio-button label="incremental">{{ t('zh-CN' === getLanguage() ? '增量扫描' : 'Incremental') }}</el-radio-button>
+                <el-radio-button label="full">{{ t('zh-CN' === getLanguage() ? '全量扫描' : 'Full Scan') }}</el-radio-button>
               </el-radio-group>
             </el-form-item>
 
-            <el-form-item label="哈希算法">
+            <el-form-item :label="t('zh-CN' === getLanguage() ? '哈希算法' : 'Hash Algorithm')">
               <el-select v-model="scanSettings.hashAlgorithm" style="width: 200px">
-                <el-option label="XXH3 (推荐，最快)" value="xxhash3" />
-                <el-option label="MD5 (标准)" value="md5" />
-                <el-option label="SHA256 (最安全)" value="sha256" />
+                <el-option label="XXH3 (Fastest)" value="xxhash3" />
+                <el-option label="MD5 (Legacy)" value="md5" />
+                <el-option label="SHA256 (Safest)" value="sha256" />
               </el-select>
             </el-form-item>
 
             <el-form-item>
               <el-checkbox v-model="scanSettings.excludeHidden">
-                默认排除隐藏文件
+                {{ t('scan.excludeHidden') }}
               </el-checkbox>
             </el-form-item>
 
             <el-form-item>
               <el-checkbox v-model="scanSettings.excludeSystem">
-                默认排除系统文件
+                {{ t('zh-CN' === getLanguage() ? '默认排除系统文件' : 'Exclude system directories') }}
               </el-checkbox>
             </el-form-item>
 
             <el-form-item>
               <el-checkbox v-model="scanSettings.autoScan">
-                启用自动扫描
+                {{ t('zh-CN' === getLanguage() ? '启用自动扫描' : 'Enable scheduled background scanning') }}
               </el-checkbox>
-              <div class="form-hint">每隔指定时间自动执行增量扫描</div>
+              <div class="form-hint">{{ t('zh-CN' === getLanguage() ? '每隔指定时间自动执行增量扫描' : 'Scans specified directories periodically') }}</div>
             </el-form-item>
 
-            <el-form-item v-if="scanSettings.autoScan" label="自动扫描间隔(小时)">
+            <el-form-item v-if="scanSettings.autoScan" :label="t('zh-CN' === getLanguage() ? '自动扫描间隔(小时)' : 'Schedule Interval (Hours)')">
               <el-slider v-model="scanSettings.autoScanInterval" :min="1" :max="168" show-stops />
             </el-form-item>
           </el-form>
@@ -425,10 +427,10 @@ onMounted(async () => {
 
         <!-- 报告设置 -->
         <div v-show="activeCategory === 'report'" class="settings-panel">
-          <h3>报告设置</h3>
+          <h3>{{ t('analysis.title') }}</h3>
           
           <el-form :model="reportSettings" label-position="top" class="settings-form">
-            <el-form-item label="默认导出格式">
+            <el-form-item :label="t('zh-CN' === getLanguage() ? '默认导出格式' : 'Default Export Format')">
               <el-radio-group v-model="reportSettings.defaultFormat">
                 <el-radio-button label="markdown">Markdown</el-radio-button>
                 <el-radio-button label="csv">CSV</el-radio-button>
@@ -436,7 +438,7 @@ onMounted(async () => {
               </el-radio-group>
             </el-form-item>
 
-            <el-form-item label="合规标准">
+            <el-form-item :label="t('zh-CN' === getLanguage() ? '合规标准' : 'Compliance Standards')">
               <el-select v-model="reportSettings.complianceStandard" style="width: 250px">
                 <el-option label="ISO 27001" value="iso27001" />
                 <el-option label="GDPR" value="gdpr" />
@@ -447,13 +449,13 @@ onMounted(async () => {
 
             <el-form-item>
               <el-checkbox v-model="reportSettings.autoGenerate">
-                扫描完成后自动生成报告
+                {{ t('zh-CN' === getLanguage() ? '扫描完成后自动生成报告' : 'Automatically generate reports after scan') }}
               </el-checkbox>
             </el-form-item>
 
             <el-form-item>
               <el-checkbox v-model="reportSettings.includeCharts">
-                报告中包含图表
+                {{ t('zh-CN' === getLanguage() ? '报告中包含图表' : 'Include charts in report') }}
               </el-checkbox>
             </el-form-item>
           </el-form>
@@ -461,30 +463,30 @@ onMounted(async () => {
 
         <!-- 通知设置 -->
         <div v-show="activeCategory === 'notification'" class="settings-panel">
-          <h3>通知设置</h3>
+          <h3>{{ t('zh-CN' === getLanguage() ? '通知设置' : 'Notification Triggers') }}</h3>
           
           <el-form :model="notificationSettings" label-position="top" class="settings-form">
             <el-form-item>
               <el-checkbox v-model="notificationSettings.scanComplete">
-                扫描完成通知
+                {{ t('zh-CN' === getLanguage() ? '扫描完成通知' : 'Notify when scanning completes') }}
               </el-checkbox>
             </el-form-item>
 
             <el-form-item>
               <el-checkbox v-model="notificationSettings.duplicatesFound">
-                发现重复文件时通知
+                {{ t('zh-CN' === getLanguage() ? '发现重复文件时通知' : 'Notify when duplicate blocks found') }}
               </el-checkbox>
             </el-form-item>
 
             <el-form-item>
               <el-checkbox v-model="notificationSettings.largeFiles">
-                发现大文件时通知
+                {{ t('zh-CN' === getLanguage() ? '发现大文件时通知' : 'Notify when large file detected') }}
               </el-checkbox>
             </el-form-item>
 
             <el-form-item>
               <el-checkbox v-model="notificationSettings.errors">
-                发生错误时通知
+                {{ t('zh-CN' === getLanguage() ? '发生错误时通知' : 'Notify on errors and warnings') }}
               </el-checkbox>
             </el-form-item>
           </el-form>
@@ -493,54 +495,52 @@ onMounted(async () => {
         <!-- 存储管理 -->
         <div v-show="activeCategory === 'storage'" class="settings-panel">
           <div class="storage-header">
-            <h3>存储管理</h3>
+            <h3>{{ t('zh-CN' === getLanguage() ? '存储管理' : 'Storage Management') }}</h3>
             <el-button type="primary" size="small" @click="loadStorageStats">
               <el-icon><Refresh /></el-icon>
-              刷新
+              {{ t('zh-CN' === getLanguage() ? '刷新' : 'Refresh') }}
             </el-button>
           </div>
 
-
-
           <div class="storage-stats">
             <el-descriptions :column="1" border>
-              <el-descriptions-item label="数据库大小">
+              <el-descriptions-item :label="t('zh-CN' === getLanguage() ? '数据库大小' : 'Database Size')">
                 {{ formatSize(storageStats.databaseSize) }}
               </el-descriptions-item>
-              <el-descriptions-item label="文件记录数">
-                {{ storageStats.filesCount }} 条
+              <el-descriptions-item :label="t('zh-CN' === getLanguage() ? '文件记录数' : 'File Records Count')">
+                {{ storageStats.filesCount }}
               </el-descriptions-item>
-              <el-descriptions-item label="扫描历史记录">
-                {{ storageStats.scanHistoryCount }} 条
+              <el-descriptions-item :label="t('zh-CN' === getLanguage() ? '扫描历史记录' : 'Scan History count')">
+                {{ storageStats.scanHistoryCount }}
               </el-descriptions-item>
-              <el-descriptions-item label="日志文件大小">
+              <el-descriptions-item :label="t('zh-CN' === getLanguage() ? '日志文件大小' : 'Log Size')">
                 {{ formatSize(storageStats.logFileSize) }}
               </el-descriptions-item>
             </el-descriptions>
           </div>
 
           <div class="storage-actions">
-            <h4>数据清理</h4>
+            <h4>{{ t('zh-CN' === getLanguage() ? '数据清理' : 'Data Pruning') }}</h4>
             <div class="action-list">
               <div class="action-item">
                 <div class="action-info">
-                  <span class="action-title">清空数据库</span>
-                  <span class="action-desc">删除所有扫描记录和文件信息</span>
+                  <span class="action-title">{{ t('zh-CN' === getLanguage() ? '清空数据库' : 'Reset Database') }}</span>
+                  <span class="action-desc">{{ t('zh-CN' === getLanguage() ? '删除所有扫描记录和文件信息' : 'Clears all file index tables permanently') }}</span>
                 </div>
                 <el-button type="danger" plain @click="clearDatabase">
                   <el-icon><Brush /></el-icon>
-                  清空
+                  {{ t('zh-CN' === getLanguage() ? '清空' : 'Reset') }}
                 </el-button>
               </div>
 
               <div class="action-item">
                 <div class="action-info">
-                  <span class="action-title">清空扫描历史</span>
-                  <span class="action-desc">保留文件数据，仅删除历史记录</span>
+                  <span class="action-title">{{ t('zh-CN' === getLanguage() ? '清空扫描历史' : 'Prune Scan History') }}</span>
+                  <span class="action-desc">{{ t('zh-CN' === getLanguage() ? '保留文件数据，仅删除历史记录' : 'Removes timestamps, keeping indexes intact') }}</span>
                 </div>
                 <el-button type="warning" plain @click="clearHistory">
                   <el-icon><Refresh /></el-icon>
-                  清空
+                  {{ t('zh-CN' === getLanguage() ? '清空' : 'Prune') }}
                 </el-button>
               </div>
             </div>
@@ -560,7 +560,6 @@ onMounted(async () => {
   box-sizing: border-box;
 }
 
-/* 确保所有直接子元素填满宽度 */
 .settings-center > * {
   width: 100% !important;
   min-width: 100% !important;
@@ -568,14 +567,12 @@ onMounted(async () => {
   box-sizing: border-box;
 }
 
-/* 确保所有卡片填满宽?*/
 .settings-center :deep(.el-card) {
   width: 100% !important;
   min-width: 100% !important;
   max-width: 100% !important;
 }
 
-/* 页面头部 */
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -587,28 +584,27 @@ onMounted(async () => {
   margin: 0 0 4px 0;
   font-size: 24px;
   font-weight: 600;
-  color: #303133;
+  color: var(--el-text-color-primary);
 }
 
 .header-subtitle {
-  color: #909399;
+  color: var(--el-text-color-secondary);
   font-size: 14px;
 }
 
-/* 设置布局 */
 .settings-layout {
   display: flex;
   gap: 24px;
-  background: #ffffff;
+  background: var(--el-bg-color-overlay);
+  border: 1px solid var(--el-border-color-light);
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
   overflow: hidden;
 }
 
-/* 侧边栏 */
 .settings-sidebar {
   width: 200px;
-  background: #f5f7fa;
+  background: var(--el-fill-color-light);
   padding: 16px 0;
   flex-shrink: 0;
 }
@@ -620,21 +616,20 @@ onMounted(async () => {
   padding: 12px 20px;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: #606266;
+  color: var(--el-text-color-regular);
 }
 
 .settings-category:hover {
-  background: #e4e7ed;
-  color: #409EFF;
+  background: var(--el-fill-color-darker);
+  color: var(--el-color-primary);
 }
 
 .settings-category.is-active {
-  background: #ffffff;
-  color: #409EFF;
-  border-right: 3px solid #409EFF;
+  background: var(--el-bg-color-overlay);
+  color: var(--el-color-primary);
+  border-right: 3px solid var(--el-color-primary);
 }
 
-/* 设置内容 */
 .settings-content {
   flex: 1;
   padding: 24px;
@@ -645,9 +640,9 @@ onMounted(async () => {
   margin: 0 0 24px 0;
   font-size: 18px;
   font-weight: 600;
-  color: #303133;
+  color: var(--el-text-color-primary);
   padding-bottom: 12px;
-  border-bottom: 1px solid #e4e7ed;
+  border-bottom: 1px solid var(--el-border-color-light);
 }
 
 .settings-form {
@@ -656,11 +651,10 @@ onMounted(async () => {
 
 .form-hint {
   font-size: 12px;
-  color: #909399;
+  color: var(--el-text-color-placeholder);
   margin-top: 4px;
 }
 
-/* 存储统计 */
 .storage-header {
   display: flex;
   justify-content: space-between;
@@ -679,7 +673,7 @@ onMounted(async () => {
 .storage-actions h4 {
   margin: 0 0 16px 0;
   font-size: 14px;
-  color: #303133;
+  color: var(--el-text-color-primary);
 }
 
 .action-list {
@@ -693,7 +687,8 @@ onMounted(async () => {
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  background: #f5f7fa;
+  background: var(--el-fill-color-blank);
+  border: 1px solid var(--el-border-color-light);
   border-radius: 8px;
 }
 
@@ -701,19 +696,19 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  text-align: left;
 }
 
 .action-title {
   font-weight: 500;
-  color: #303133;
+  color: var(--el-text-color-primary);
 }
 
 .action-desc {
   font-size: 12px;
-  color: #909399;
+  color: var(--el-text-color-secondary);
 }
 
-/* 响应式 */
 @media (max-width: 768px) {
   .settings-layout {
     flex-direction: column;
@@ -733,10 +728,7 @@ onMounted(async () => {
   
   .settings-category.is-active {
     border-right: none;
-    border-bottom: 3px solid #409EFF;
+    border-bottom: 3px solid var(--el-color-primary);
   }
 }
 </style>
-
-
-
