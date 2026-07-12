@@ -653,7 +653,7 @@ async function initializeApp() {
   try {
     const { join } = await import('@tauri-apps/api/path');
     let exeDir = await invoke('get_exe_dir') as string;
-    dbPath.value = await join(exeDir, 'duplicate_file_hunter.db');
+    dbPath.value = await join(exeDir, 'spacetree.db');
 
     // 数据库不存在则自动创建
     const { exists } = await import('@tauri-apps/plugin-fs');

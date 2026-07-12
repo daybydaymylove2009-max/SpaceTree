@@ -21,7 +21,7 @@ const onLanguageChange = () => {
 };
 
 // 版本信息
-const appVersion = ref('3.40.0');
+const appVersion = ref('3.50.0');
 const tauriVersion = ref('');
 const rustVersion = ref('1.77.2');
 const buildDate = ref('2026-07-12');

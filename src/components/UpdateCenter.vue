@@ -12,7 +12,7 @@ import { check } from '@tauri-apps/plugin-updater'
 import { relaunch } from '@tauri-apps/plugin-process'
 
 // 当前版本
-const CURRENT_VERSION = '3.40.0'
+const CURRENT_VERSION = '3.50.0'
 
 // 更新状态
 const updateStatus = ref<'checking' | 'available' | 'latest' | 'error' | 'downloading'>('checking')
@@ -24,6 +24,17 @@ let activeUpdateInstance: any = null
 
 // 版本历史
 const versionHistory = ref([
+  {
+    version: '3.50.0',
+    date: '2026-07-13',
+    type: 'minor',
+    changes: [
+      '物理层去重优化：完美修复 TypeScript 编译报错与 element-plus 组件类型问题',
+      '安全沙箱与能力更新：补全并开放 fs、updater 与 process 默认 ACL 权限授权',
+      '工程结构规范化：统一默认可执行包为 SpaceTree.exe，本地运行时数据库名自动同步重映射为 spacetree.db',
+      '多国语言国际化扩展：补充关于页面中复制版本信息等缺失字段的中英文语言包字典'
+    ]
+  },
   {
     version: '3.40.0',
     date: '2026-07-12',

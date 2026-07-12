@@ -1,4 +1,4 @@
-# 🔍 空间树 (SpaceTree v3.40.0)
+# 🔍 空间树 (SpaceTree v3.50.0)
 
 [![Tauri Build](https://github.com/daybydaymylove2009-max/SpaceTree/actions/workflows/publish.yml/badge.svg)](https://github.com/daybydaymylove2009-max/SpaceTree/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)

@@ -107,7 +107,7 @@ onUnmounted(() => {
           </div>
           <div class="brand-text" v-show="!isCollapsed">
             <h1 class="brand-title">{{ t('common.appName') }}</h1>
-            <span class="brand-subtitle">v3.40.0</span>
+            <span class="brand-subtitle">v3.50.0</span>
           </div>
         </div>
         <el-button 

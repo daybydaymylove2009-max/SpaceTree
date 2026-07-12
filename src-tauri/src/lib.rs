@@ -6133,10 +6133,10 @@ pub struct AppVersionInfo {
 fn get_app_version_info() -> AppVersionInfo {
     AppVersionInfo {
         app_name: "空间树 (SpaceTree)".to_string(),
-        app_version: "3.40.0".to_string(),
+        app_version: "3.50.0".to_string(),
         tauri_version: "2.10.3".to_string(),
         rust_version: "1.77.2".to_string(),
-        build_date: "2026-07-12".to_string(),
+        build_date: "2026-07-13".to_string(),
         author: "呆若木鸡".to_string(),
         license: "MIT License".to_string(),
         description: "一款功能强大的重复文件查找和管理工具".to_string(),

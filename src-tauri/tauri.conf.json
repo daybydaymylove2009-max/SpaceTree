@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "SpaceTree",
-  "version": "3.40.0",
+  "version": "3.50.0",
   "identifier": "com.spacetree.app",
   "build": {
     "frontendDist": "../dist",

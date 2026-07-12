@@ -4,8 +4,8 @@
  * @component AnalysisCenter
  * @description 集成了高性能 GPU 加速 HTML5 Canvas 矩形树图（Squarified Treemap）、大文件无级缩放/拖拽聚焦、历史扫描快照导出下载与差分对比。
  */
-import { ref, onMounted, onUnmounted } from 'vue';
-import { t } from '../utils/i18n';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
+import { t, getLanguage } from '../utils/i18n';
 import { ElMessage } from 'element-plus';
 import {
   Files, Warning, Check, Refresh, Download,
@@ -73,6 +73,29 @@ const isDragging = ref(false);
 const startDragX = ref(0);
 const startDragY = ref(0);
 
+// 树图下钻过滤目录
+const currentZoomPath = ref<string>('');
+
+const pathSegments = computed(() => {
+  if (!currentZoomPath.value) return [];
+  return currentZoomPath.value.split(/[\\/]/).filter(s => s);
+});
+
+function navigateToSegment(idx: number) {
+  const segments = currentZoomPath.value.split(/[\\/]/).filter(s => s);
+  const delimiter = currentZoomPath.value.includes('/') ? '/' : '\\';
+  currentZoomPath.value = segments.slice(0, idx + 1).join(delimiter);
+  if (currentZoomPath.value.match(/^[a-zA-Z]:$/)) {
+    currentZoomPath.value += delimiter; // 补全 Win 盘符
+  }
+  resetZoom();
+}
+
+function resetZoomPath() {
+  currentZoomPath.value = '';
+  resetZoom();
+}
+
 // 计算并布局 Squarified Treemap (基于 Bruls-Huizing-van Wijk 算法)
 function computeSquarifiedLayout(containerW: number, containerH: number) {
   if (!report.value || !report.value.by_size || !report.value.by_size.large_duplicate_files) {
@@ -80,8 +103,17 @@ function computeSquarifiedLayout(containerW: number, containerH: number) {
     return;
   }
 
-  // 截取前 100 大文件进行分页级别高精度 Canvas 平铺，支持百万节点降维渲染
-  const rawFiles = report.value.by_size.large_duplicate_files.slice(0, 100);
+  // 1. 过滤以 currentZoomPath 为前缀的文件，或者若为空则展示全部
+  let rawFiles = report.value.by_size.large_duplicate_files;
+  if (currentZoomPath.value) {
+    const filterPath = currentZoomPath.value.toLowerCase().replace(/\\/g, '/');
+    rawFiles = rawFiles.filter(f => {
+      return f.locations.some(loc => loc.toLowerCase().replace(/\\/g, '/').startsWith(filterPath));
+    });
+  }
+
+  // 2. 截取前 100 大文件进行平铺渲染
+  rawFiles = rawFiles.slice(0, 100);
   if (rawFiles.length === 0) {
     calculatedNodes.value = [];
     return;
@@ -363,12 +395,23 @@ function handleCanvasMouseDown(e: MouseEvent) {
   const clickX = e.clientX - rect.left;
   const clickY = e.clientY - rect.top;
 
-  // 判断是否双击
+  // 判断是否双击进行下钻
   if (e.detail === 2) {
-    // 寻找被双击的节点
     const node = findNodeAtPosition(clickX, clickY);
     if (node) {
-      openFolder(node.original.locations[0]);
+      const pathStr = node.original.locations[0];
+      const lastIndex = Math.max(pathStr.lastIndexOf('/'), pathStr.lastIndexOf('\\'));
+      if (lastIndex !== -1) {
+        const dirPath = pathStr.slice(0, lastIndex);
+        currentZoomPath.value = dirPath;
+        scale.value = 1.0;
+        panX.value = 0;
+        panY.value = 0;
+        const rect = canvas.getBoundingClientRect();
+        computeSquarifiedLayout(rect.width, 300);
+        drawTreemap();
+        ElMessage.success(t('zh-CN' === getLanguage() ? `已聚焦下钻至目录: ${dirPath}` : `Drilled down to: ${dirPath}`));
+      }
     }
     return;
   }
@@ -824,6 +867,32 @@ onUnmounted(() => {
         </div>
       </template>
 
+      <!-- 面包屑导航 -->
+      <div class="treemap-breadcrumbs-bar" v-if="currentZoomPath">
+        <el-tag 
+          class="breadcrumb-pill clickable" 
+          type="info" 
+          effect="plain"
+          size="small" 
+          @click="resetZoomPath"
+        >
+          🌐 {{ t('zh-CN' === getLanguage() ? '全局磁盘' : 'Global') }}
+        </el-tag>
+        <span class="breadcrumb-separator">/</span>
+        <template v-for="(segment, idx) in pathSegments" :key="idx">
+          <el-tag 
+            class="breadcrumb-pill clickable" 
+            :type="idx === pathSegments.length - 1 ? 'primary' : 'info'" 
+            :effect="idx === pathSegments.length - 1 ? 'light' : 'plain'"
+            size="small"
+            @click="navigateToSegment(idx)"
+          >
+            {{ segment }}
+          </el-tag>
+          <span class="breadcrumb-separator" v-if="idx < pathSegments.length - 1">/</span>
+        </template>
+      </div>
+
       <!-- HTML5 Canvas 绘制区域 -->
       <div class="canvas-wrapper-box">
         <canvas 
@@ -838,18 +907,18 @@ onUnmounted(() => {
         
         <!-- 侧悬浮卡片：展示当前选中的文件详情 -->
         <div class="selected-hover-panel" v-if="selectedPreviewFile">
-          <div class="panel-header">🎯 选中分析项</div>
+          <div class="panel-header">🎯 {{ t('analysis.hoverPanelTitle') }}</div>
           <div class="panel-body">
-            <div class="panel-row"><span class="lbl">文件名:</span> <span class="val" :title="selectedPreviewFile.filenames[0]">{{ selectedPreviewFile.filenames[0] }}</span></div>
-            <div class="panel-row"><span class="lbl">单体大小:</span> <span class="val">{{ formatSize(selectedPreviewFile.size) }}</span></div>
-            <div class="panel-row"><span class="lbl">浪费空间:</span> <span class="val font-red">{{ formatSize(selectedPreviewFile.potential_savings) }} ({{ selectedPreviewFile.file_count }} 份重复)</span></div>
-            <div class="panel-row"><span class="lbl">主路径:</span> <span class="val" :title="selectedPreviewFile.locations[0]">{{ selectedPreviewFile.locations[0] }}</span></div>
+            <div class="panel-row"><span class="lbl">{{ t('analysis.fileName') }}:</span> <span class="val" :title="selectedPreviewFile.filenames[0]">{{ selectedPreviewFile.filenames[0] }}</span></div>
+            <div class="panel-row"><span class="lbl">{{ t('analysis.fileSize') }}:</span> <span class="val">{{ formatSize(selectedPreviewFile.size) }}</span></div>
+            <div class="panel-row"><span class="lbl">{{ t('analysis.wastedSpace') }}:</span> <span class="val font-red">{{ formatSize(selectedPreviewFile.potential_savings) }} ({{ selectedPreviewFile.file_count }} 份重复)</span></div>
+            <div class="panel-row"><span class="lbl">{{ t('analysis.mainPath') }}:</span> <span class="val" :title="selectedPreviewFile.locations[0]">{{ selectedPreviewFile.locations[0] }}</span></div>
           </div>
         </div>
       </div>
       
       <div class="treemap-footer-hint">
-        * 滚轮可无级缩放，按住鼠标拖拽可平移画布。双击方块可在本地资源管理器中定位对应文件夹。
+        {{ t('zh-CN' === getLanguage() ? '* 滚轮可无级缩放，按住鼠标拖拽可平移画布。双击方块可在本地目录树中深度下钻聚焦。' : '* Mouse wheel to zoom, drag to pan. Double click block to drill-down directory.') }}
       </div>
     </el-card>
 
@@ -1376,5 +1445,35 @@ onUnmounted(() => {
 
 .no-diff-state {
   margin-top: 40px;
+}
+
+.treemap-breadcrumbs-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  backdrop-filter: blur(10px);
+  text-align: left;
+}
+
+.breadcrumb-pill.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.breadcrumb-pill.clickable:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+.breadcrumb-separator {
+  color: var(--el-text-color-placeholder);
+  font-size: 12px;
+  user-select: none;
 }
 </style>

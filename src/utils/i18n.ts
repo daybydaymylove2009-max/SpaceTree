@@ -121,7 +121,8 @@ export const locales = {
       website: '技术源码库',
       issue: '提交Issue反馈',
       techDashboard: '底层核心技术指标',
-      changelog: '更新日志与迭代历史'
+      changelog: '更新日志与迭代历史',
+      copyInfo: '复制版本信息'
     }
   },
   'en-US': {
@@ -237,7 +238,8 @@ export const locales = {
       website: 'GitHub Repository',
       issue: 'Submit Issue Feedback',
       techDashboard: 'Core Architecture Indicators',
-      changelog: 'Changelog & History'
+      changelog: 'Changelog & History',
+      copyInfo: 'Copy Version Info'
     }
   }
 };
