@@ -1,4 +1,4 @@
-// 重复文件猎手 - 企业级完整实现 v2.0
+// SpaceTree 空间树 - 企业级完整实现 v3.40.0
 
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
@@ -6132,11 +6132,11 @@ pub struct AppVersionInfo {
 #[tauri::command]
 fn get_app_version_info() -> AppVersionInfo {
     AppVersionInfo {
-        app_name: "重复文件猎手".to_string(),
-        app_version: "1.1.0".to_string(),
+        app_name: "空间树 (SpaceTree)".to_string(),
+        app_version: "3.40.0".to_string(),
         tauri_version: "2.10.3".to_string(),
         rust_version: "1.77.2".to_string(),
-        build_date: "2025-04-18".to_string(),
+        build_date: "2026-07-12".to_string(),
         author: "智博网络".to_string(),
         license: "MIT License".to_string(),
         description: "一款功能强大的重复文件查找和管理工具".to_string(),
@@ -6467,7 +6467,7 @@ fn save_files_to_database(conn: &Connection, files: &[FileInfo]) -> Result<(), S
 
 pub fn run() {
     env_logger::init();
-    info!("重复文件猎手启动");
+    info!("SpaceTree 空间树启动");
     
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())

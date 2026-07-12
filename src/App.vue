@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * 重复文件猎手 - 主控制中心（MFT/USN 驱动极速版）
+ * SpaceTree 空间树 - 主控制中心（MFT/USN 驱动极速版）
  * @description 采用极客三栏玻璃拟态布局，内置物理设备状态感知、一键热定位重映射、多维度部分匹配算法以及自研百万级扁平虚拟滚动查重工作台
  */
 import { ref, onMounted, defineAsyncComponent, computed, watch } from 'vue';
