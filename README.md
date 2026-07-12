@@ -1,12 +1,12 @@
-# 🔍 重复文件猎手 (Duplicate File Hunter v3.40.0)
+# 🔍 空间树 (SpaceTree v3.40.0)
 
-[![Tauri Build](https://github.com/daybydaymylove2009-max/file-manager/actions/workflows/publish.yml/badge.svg)](https://github.com/daybydaymylove2009-max/file-manager/actions)
+[![Tauri Build](https://github.com/daybydaymylove2009-max/SpaceTree/actions/workflows/publish.yml/badge.svg)](https://github.com/daybydaymylove2009-max/SpaceTree/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)]()
 
 > **“让磁盘重构成为一门科学与交互的艺术。”**
 
-**重复文件猎手 (Duplicate File Hunter)** 是一款专为**摄影师、程序员、音视频创作者以及系统管理员**打造的学术级、超高性能磁盘重复文件扫描与去重回收工具。
+**空间树 (SpaceTree)** 是一款专为**摄影师、程序员、音视频创作者以及系统管理员**打造的学术级、超高性能磁盘重复文件扫描与去重回收工具。
 
 不同于市面上简陋且存在误删风险的清理工具，本系统采用 **Tauri v2 + Rust + Vue 3 + TypeScript** 架构，从**密码学防灾哈希、底层多线程并发文件系统遍历、事务型 NTFS 硬链接去重**，到 **GPU 加速的 Canvas 无级缩放矩形树图**，全链路贯穿科学诚信与广大人民群众的易用性体验。
 

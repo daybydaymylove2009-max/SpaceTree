@@ -6137,7 +6137,7 @@ fn get_app_version_info() -> AppVersionInfo {
         tauri_version: "2.10.3".to_string(),
         rust_version: "1.77.2".to_string(),
         build_date: "2026-07-12".to_string(),
-        author: "智博网络".to_string(),
+        author: "呆若木鸡".to_string(),
         license: "MIT License".to_string(),
         description: "一款功能强大的重复文件查找和管理工具".to_string(),
     }

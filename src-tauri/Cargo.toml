@@ -2,7 +2,7 @@
 name = "duplicate-file-hunter"
 version = "3.40.0"
 description = "智能重复文件管理工具 - 3.0 版本"
-authors = ["智博网络"]
+authors = ["呆若木鸡"]
 license = ""
 repository = ""
 edition = "2021"

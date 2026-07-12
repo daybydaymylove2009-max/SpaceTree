@@ -42,8 +42,8 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: v__VERSION__
-          releaseName: '重复文件猎手 v__VERSION__'
-          releaseBody: '🎉 自动打包发布。详细变更请查阅更新日志。'
+          releaseName: '空间树 v__VERSION__'
+          releaseBody: '🎉 自动打包发布。'
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}

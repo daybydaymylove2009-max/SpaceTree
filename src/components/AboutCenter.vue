@@ -31,7 +31,7 @@ const appInfo = {
   name: 'SpaceTree',
   fullName: 'SpaceTree - Extreme Disk Treemap Utility',
   license: 'MIT License',
-  copyright: '© 2026 SpaceTree Dev. All rights reserved.'
+  copyright: '© 2026 呆若木鸡. All rights reserved.'
 };
 
 // 技术栈
