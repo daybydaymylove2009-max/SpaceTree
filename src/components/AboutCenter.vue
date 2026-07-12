@@ -25,7 +25,7 @@ const appInfo = ref({
   fullName: 'Duplicate File Hunter - Geek Edition',
   description: '一款极速文件管理器与查重系统，支持 Windows 日志（USN）特权枚举、物理卷 GUID 盘符自愈重定位、前 K 字节部分哈希匹配及百万级虚拟滚动工作台。',
   author: '智博网络 & Gemini AI',
-  website: 'https://github.com',
+  website: 'https://github.com/daybydaymylove2009-max/file-manager',
   license: 'MIT License',
   copyright: '© 2026 智博网络. All rights reserved.'
 });
@@ -351,7 +351,7 @@ onMounted(() => {
           <el-button
             text
             type="primary"
-            @click="openExternalLink('https://github.com')"
+            @click="openExternalLink('https://github.com/daybydaymylove2009-max/file-manager/issues')"
           >
             <template #icon><span>💬</span></template>
             提交Issue反馈
