@@ -763,7 +763,7 @@ onUnmounted(() => {
               </el-tag>
             </div>
             <div class="path-empty-tip" v-else>
-              未限制检索路径，将在底层 MFT 索引库中进行广义搜索
+              未限制检索路径，将在扫描中心已扫描入库的数据中进行全局快速检索
             </div>
           </div>
 
