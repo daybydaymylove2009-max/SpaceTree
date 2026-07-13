@@ -61,7 +61,7 @@ interface DuplicateClassification {
 }
 
 // 激活的菜单
-const activeMenu = ref('search');
+const activeMenu = ref('scan');
 
 // 数据库路径
 const dbPath = ref('');
@@ -666,11 +666,6 @@ async function initializeApp() {
     
     // 关键：在数据库就绪之后，主动运行一次数据库文件状态校验
     await checkDatabaseFiles();
-
-    // 体验优化：若数据库中无任何数据，默认进入扫描中心
-    if (hasDatabaseFiles.value === false) {
-      activeMenu.value = 'scan';
-    }
   } catch (error) {
     console.error('启动初始化失败:', error);
   }
