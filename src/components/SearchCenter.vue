@@ -12,7 +12,7 @@ import {
   CopyDocument, Warning
 } from '@element-plus/icons-vue';
 import { invoke, convertFileSrc } from '@tauri-apps/api/core';
-import { open, save } from '@tauri-apps/plugin-dialog';
+import { save } from '@tauri-apps/plugin-dialog';
 import VirtualList from './VirtualList.vue';
 
 interface FileInfo {
@@ -55,6 +55,35 @@ const matchAlgorithm = ref<'like' | 'fuzzy' | 'regex' | 'wildcard'>('like');
 // 搜索及过滤参数
 const searchQuery = ref('');
 const searchPaths = ref<string[]>([]); // 检索目录范围限制
+const scannedDirs = ref<string[]>([]); // 从扫描历史中拉取的所有已扫描根目录
+
+// 异步加载已扫描的历史根目录作为限定可选项
+async function loadScannedDirectories() {
+  if (!props.db_path) return;
+  try {
+    const result = await invoke('get_scan_history_list', {
+      db_path: props.db_path,
+      params: {
+        page: 1,
+        page_size: 100,
+        status: 'completed'
+      }
+    }) as any;
+    const dirs = new Set<string>();
+    if (result && result.items) {
+      for (const item of result.items) {
+        if (item.directories && Array.isArray(item.directories)) {
+          for (const d of item.directories) {
+            dirs.add(d);
+          }
+        }
+      }
+    }
+    scannedDirs.value = Array.from(dirs);
+  } catch (err) {
+    console.error('获取扫描历史目录失败:', err);
+  }
+}
 const fileExtensions = ref<string[]>([]);
 const minSize = ref<number | null>(null);
 const maxSize = ref<number | null>(null);
@@ -122,31 +151,7 @@ watch(fileExtensions, (newExtensions) => {
   activeMediaType.value = matchedType;
 });
 
-// 选择检索范围路径
-async function selectSearchPath() {
-  try {
-    const selected = await open({
-      directory: true,
-      multiple: false
-    });
-    if (selected && selected !== '') {
-      if (!searchPaths.value.includes(selected as string)) {
-        searchPaths.value.push(selected as string);
-      }
-    }
-  } catch (error) {
-    ElMessage.error(`选择路径失败: ${error}`);
-  }
-}
 
-// 移除检索范围路径
-function removeSearchPath(index: number) {
-  searchPaths.value.splice(index, 1);
-}
-
-function clearAllSearchPaths() {
-  searchPaths.value = [];
-}
 
 // Levenshtein 拼写距离核心算法
 function calculateLevenshtein(s1: string, s2: string): number {
@@ -676,6 +681,7 @@ onMounted(async () => {
   if (props.db_path) {
     await performSearch(false);
     await loadSearchHistory();
+    await loadScannedDirectories();
   }
 });
 
@@ -738,33 +744,27 @@ onUnmounted(() => {
             </span>
           </div>
 
-          <!-- 检索路径限定 -->
+          <!-- 检索路径限定 (限制为已扫描入库的根目录) -->
           <div class="form-item-wrapper" style="margin-top: 16px;">
             <label class="form-item-label">
-              检索路径限定 (默认全盘检索)
-              <el-button link type="primary" @click="selectSearchPath" style="margin-left: 8px;">
-                + 添加目录
-              </el-button>
-              <el-button link type="danger" v-if="searchPaths.length > 0" @click="clearAllSearchPaths" style="margin-left: 8px;">
-                清空
-              </el-button>
+              检索路径限定 (默认全量检索)
             </label>
-            <div class="search-path-badges" v-if="searchPaths.length > 0">
-              <el-tag
-                v-for="(path, idx) in searchPaths"
-                :key="path"
-                closable
-                type="info"
-                effect="plain"
-                class="path-badge-tag"
-                @close="removeSearchPath(idx)"
-              >
-                {{ path }}
-              </el-tag>
-            </div>
-            <div class="path-empty-tip" v-else>
-              未限制检索路径，将在扫描中心已扫描入库的数据中进行全局快速检索
-            </div>
+            <el-select
+              v-model="searchPaths"
+              multiple
+              collapse-tags
+              collapse-tags-tooltip
+              placeholder="选择已扫描的历史目录进行范围限定"
+              style="width: 100%; margin-top: 8px;"
+              @focus="loadScannedDirectories"
+            >
+              <el-option
+                v-for="dir in scannedDirs"
+                :key="dir"
+                :label="dir"
+                :value="dir"
+              />
+            </el-select>
           </div>
 
           <!-- 一键检索大按钮 -->
